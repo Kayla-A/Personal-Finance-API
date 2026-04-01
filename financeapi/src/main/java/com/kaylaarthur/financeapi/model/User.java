@@ -1,6 +1,5 @@
 package com.kaylaarthur.financeapi.model;
 
-
 /**
  * Represents a basic User. A user is an individual that interacts with
  * the system to add information to the system and access information from the system.
@@ -21,6 +20,10 @@ public class User {
      * @param password The user's password.
      */
     User(String name, String email, String password) {
+        if(name == null || email == null || password == null ||
+            name == "" || email == "" || password == "") {
+            throw new IllegalArgumentException("Name, email, and/or password cannot be null or empty");
+        } // if
         this.name = name;
         this.email = email;
         this.password = password;
@@ -36,7 +39,12 @@ public class User {
     * Sets the name of the user.
     * @param name The user's new name.
     */
-    public void setName(String name) { this.name = name; } // setName
+    public void setName(String name) { 
+        if(name == null || name == "") {
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        } // if
+        this.name = name; 
+    } // setName
 
     /**
      * Returns the user's email.
@@ -48,7 +56,12 @@ public class User {
      * Sets the user's email.
      * @param email The user's new email.
      */
-    public void setEmail(String email) { this.email = email; } // setEmail
+    public void setEmail(String email) { 
+        if(email == null || email == "") {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        } // if
+        this.email = email; 
+    } // setEmail
 
     /**
      * Returns the user's password.
@@ -60,6 +73,11 @@ public class User {
      * Sets the user's password.
      * @param password The user's new password
      */
-    public void setPassword(String password) { this.password = password; } // setPassword
+    public void setPassword(String password) { 
+        if(password == null || password == "") {
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        } // if
+        this.password = password; 
+    } // setPassword
 
 } // User 
