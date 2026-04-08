@@ -1,13 +1,18 @@
 package com.kaylaarthur.financeapi.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
 /**
  * Represents a basic User. A user is an individual that interacts with
  * the system to add information to the system and access information from the system.
  * 
  * This class provides methods for getting and setting user information.
  */
+@Entity
 public class User {
-    
+    @Id
+    private long id;
     private String name; 
     private String email;
     private String password;
@@ -19,7 +24,7 @@ public class User {
      * @param email The user's email.
      * @param password The user's password.
      */
-    User(String name, String email, String password) {
+    public User(String name, String email, String password) {
         if(name == null || email == null || password == null ||
             name == "" || email == "" || password == "") {
             throw new IllegalArgumentException("Name, email, and/or password cannot be null or empty");
@@ -28,6 +33,37 @@ public class User {
         this.email = email;
         this.password = password;
     } // User
+
+    /**
+     * Creates a new User with the specified id, name, email and password.
+     * 
+     * @param id The user's id.
+     * @param name The user's name.
+     * @param email The user's email.
+     * @param password The user's password.
+     */
+    public User(long id, String name, String email, String password) {
+        this.id = id;
+        if(name == null || email == null || password == null ||
+            name == "" || email == "" || password == "") {
+            throw new IllegalArgumentException("Name, email, and/or password cannot be null or empty");
+        } // if
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    } // User
+
+    /**
+     * Returns the user's id.
+     * @return The user's id.
+     */
+    public long getId() { return id; } // getId
+
+    /**
+     * Sets the user's id.
+     * @param id The user's id.
+     */
+    public void setId(long id) { this.id = id; }
 
     /**
      * Returns the name of the user.
