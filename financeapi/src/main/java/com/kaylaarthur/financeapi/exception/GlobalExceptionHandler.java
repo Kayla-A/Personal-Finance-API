@@ -1,4 +1,4 @@
-package com.kaylaarthur.exception;
+package com.kaylaarthur.financeapi.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

@@ -67,7 +67,7 @@ public class UserService {
 
     /**
      * description
-     * does not validate eamil domain or tld
+     * does not validate eamil instead it cheacks for a general email format 
      * @param email
      * @return
      */
@@ -78,8 +78,7 @@ public class UserService {
         // check email isn't taken
         if(userRepo.findByEmail(email) != null) { return false; }
         // check name is valid structure
-        //CHECK REGEX
-        String regex = "^[\\w\\-][\\w\\-(?!.*\\.\\.)].+@[valid domain].+\\.[a-zA-z]{2,}.+$"; // support unicode?
+        String regex = "^(?!.*\\.\\.)(?!\\.)(?!.*\\.$)[A-Za-z0-9+_.-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*\\.[A-Za-z]{2,}$"; // support unicode?
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(email);
         return m.matches();

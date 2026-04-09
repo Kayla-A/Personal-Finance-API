@@ -5,11 +5,7 @@ public class CreateUserRequest {
     private String email;
     private String password;
 
-    CreateUserRequest(String name, String email, String password) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-    } // CreateUserRequest
+    public CreateUserRequest() {} // CreateUserRequest
 
     public String getName() { return name; }
 
