@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
 /**
  * 
@@ -29,7 +30,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleBadRequest(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
-    } // handleBadRequest
+    } // handleBadReequest
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleNotFound(IllegalArgumentException e) {
+        return ResponseEntity.status(404).body(e.getMessage());
+    } // handleBadReequest
 
 
 } // GlobalExceptionHandler

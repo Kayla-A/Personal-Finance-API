@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+
 
 
 /**
@@ -33,10 +36,10 @@ public class UserController {
         output: success response + DTO (never retun password it's a security risk )
      */
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request) {        
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {      
         User user = userService.createUser(request.getName(), request.getEmail(), request.getPassword());
         UserResponse response = new UserResponse(user.getId(), user.getName(), user.getEmail());
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     } // createUser
     
 } // UserController

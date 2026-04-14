@@ -17,6 +17,8 @@ public class User {
     private String email;
     private String password;
 
+
+    public User() {}
     /**
      * Creates a new User with the specified name, email and password.
      * 
@@ -103,7 +105,7 @@ public class User {
      * Returns the user's password.
      * @return The users password
      */
-    public String getPassword() { return password; } // getPassword
+    public String getHashedPassword() { return password; } // getPassword
 
     /**
      * Sets the user's password.

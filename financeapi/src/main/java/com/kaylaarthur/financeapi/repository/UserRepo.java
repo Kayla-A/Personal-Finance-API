@@ -4,6 +4,7 @@ import com.kaylaarthur.financeapi.model.User;
 
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,16 +34,20 @@ public class UserRepo {
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getName());
             stmt.setString(2, user.getEmail());
-            stmt.setString(3, user.getPassword());
+            stmt.setString(3, user.getHashedPassword());
 
             stmt.executeUpdate();
-
-            ResultSet rs = stmt.getGeneratedKeys();
-            if(rs.next()) {
-                user.setId(rs.getLong(1));
-            } // if
+            
+            try(ResultSet rs = stmt.getGeneratedKeys()) {
+                if(rs.next()) {
+                    user.setId(rs.getLong(1));
+                } else {
+                    throw new RuntimeException("Failed to retrieve generated Id");
+                } // if
+            } // try
+             
         } catch(SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error saving user", e);
         } // try-catch
 
         return user;
@@ -53,27 +58,24 @@ public class UserRepo {
      * @param name
      * @return
      */
-    public User findByName(String name) {
-        User user = null;
+    public Optional<User> findByName(String name) {
         String sql = "SELECT * FROM Users Where name = ?";
+        
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, name);
 
-            ResultSet rs = stmt.executeQuery();
-            if(rs.next()) {
-                user = new User(
-                    rs.getLong("user_id"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("hashed_password")
-                );
-            } // if
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return Optional.of(mapRowTUser(rs));
+                } // if
+            } // try
+
         } catch(SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error finding user by name", e);
         } // try-catch
 
-        return user;
+        return Optional.empty();
     } // finsByName
 
     /**
@@ -81,57 +83,38 @@ public class UserRepo {
      * @param email
      * @return
      */
-    public User findByEmail(String email) {
-        User user = null;
+    public Optional<User> findByEmail(String email) {
         String sql = "SELECT * FROM Users Where email = ?";
+        
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, email);
 
-            ResultSet rs = stmt.executeQuery();
-            if(rs.next()) {
-                user = new User(
-                    rs.getLong("user_id"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("hashed_password")
-                );
-            } // if
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return Optional.of(mapRowTUser(rs));
+                } // if
+            } // try
+
         } catch(SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error finding user by email", e);
         } // try-catch
 
-        return user;
+        return Optional.empty();
     } // finsByEmail
 
-
     /**
-     * 
-     * @param hashedPass
-     * @return
+     * Maps the rows of the Result Set to the User enitty model.
+     * @param rs The result set containing the rows to map.
+     * @return The new User entity.
+     * @throws SQLException
      */
-    public User findByHashed(String hashedPass) {
-        User user = null;
-        String sql = "SELECT * FROM Users WHERE hashed_password = ?";
-
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, hashedPass);
-            ResultSet rs = stmt.executeQuery();
-
-            if(rs.next()) {
-                user = new User(
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("hashed_password")
-                );
-            } // if
-
-        } catch(SQLException e) {
-            e.printStackTrace();
-        } // try-catch
-
-        return user;
-    } // findByHash
+    private User mapRowTUser(ResultSet rs) throws SQLException {
+        return new User(rs.getLong("user_id"),
+                        rs.getString("name"),
+                        rs.getString("email"),
+                        rs.getString("hashed_password")
+                    );
+    } // mapRowToUser
 
 } // userRepo

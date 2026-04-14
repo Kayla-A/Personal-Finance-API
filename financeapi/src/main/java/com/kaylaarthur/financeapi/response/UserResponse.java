@@ -1,9 +1,10 @@
 package com.kaylaarthur.financeapi.response;
 
 public class UserResponse {
-    private long id;
-    private String name;
-    private String email;
+    
+    private final long id;
+    private final String name;
+    private final String email;
 
     public UserResponse(long id, String name, String email) {
         this.id = id;
