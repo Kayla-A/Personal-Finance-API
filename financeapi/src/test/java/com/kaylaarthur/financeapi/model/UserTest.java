@@ -11,7 +11,7 @@ public class UserTest {
         User user = new User("Kayla", "kayla@email.com", "password0612");
         assertEquals("Kayla", user.getName());
         assertEquals("kayla@email.com", user.getEmail());
-        assertEquals("password0612", user.getPassword());
+        assertEquals("password0612", user.getHashedPassword());
     } // testName
 
     @Test
@@ -24,7 +24,7 @@ public class UserTest {
 
         assertEquals("Kayla", user.getName());
         assertEquals("kayla@email.com", user.getEmail());
-        assertEquals("password0612", user.getPassword());
+        assertEquals("password0612", user.getHashedPassword());
     } // testSetters 
 
     @Test
