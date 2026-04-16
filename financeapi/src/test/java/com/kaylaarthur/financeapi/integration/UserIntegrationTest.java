@@ -23,14 +23,14 @@ public class UserIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                    "name": "Testing",
-                    "email": "testing@gmail.com",
-                    "password": "testPass1!"
+                    "name": "Testing2",
+                    "email": "testing2@gmail.com",
+                    "password": "testPass2!"
                     }
                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.email").value("testing@gmail.com"));
+                .andExpect(jsonPath("$.email").value("testing2@gmail.com"));
     } // shouldCreateUser
 
 } // UserIntegrationTest

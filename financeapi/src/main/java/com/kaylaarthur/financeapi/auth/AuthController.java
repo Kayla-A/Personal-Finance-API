@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.kaylaarthur.financeapi.request.LoginRequest;
 import com.kaylaarthur.financeapi.response.LoginResponse;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ public class AuthController {
     } // AuthController
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> loginUser(@Valid @RequestParam LoginRequest request) {
+    public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody LoginRequest request) {
         User user = authService.loginUser(request.getEmail(), request.getPassword());
         LoginResponse response = new LoginResponse(jwtService.generateToken(user), user.getId(), user.getName(), user.getEmail());
         return ResponseEntity.status(HttpStatus.OK).body(response);
