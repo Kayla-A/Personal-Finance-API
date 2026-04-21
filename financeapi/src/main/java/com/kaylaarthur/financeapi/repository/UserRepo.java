@@ -20,7 +20,7 @@ public class UserRepo {
 
     public UserRepo(DataSource dataSource) {
         this.dataSource = dataSource;
-    } // getConnection 
+    } // UserRepo
 
     /**
      * 
