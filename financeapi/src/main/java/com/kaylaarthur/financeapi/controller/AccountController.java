@@ -48,21 +48,23 @@ public class AccountController {
         return new String();
     } // getAllAccounts
 
-    @GetMapping("/{accountId}")
+    @GetMapping("/{id}")
     public String getAccount(@RequestParam String param) {
         return new String();
     } // getAccount
 
-    @PutMapping("/{accountId}")
+    @PutMapping("/{id}")
     public String updateAccount(@PathVariable String id, @RequestBody String entity) {
         //TODO: process PUT request
         
         return entity;
     } // updateAccount
 
-    @DeleteMapping()
-    public String deleteAccount() {
-        return "to do";
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAccount(@Valid @RequestParam() long accountId) {
+        User user = securityUtility.getCurrentUser();
+        accountService.deleteAccount(user.getId(), accountId);
+        return ResponseEntity.noContent().build();
     } // deleteAccount    
     
 } // AccountController

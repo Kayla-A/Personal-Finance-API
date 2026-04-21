@@ -51,6 +51,22 @@ public class AccountRepo {
         return account;
     } // saveAccount
 
+    public void delete(long userId, long accountId) {
+         String sql = "DELETE FROM Accounts WHERE user_id = ? and name = ?";
+
+       try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, accountId);
+
+            stmt.executeUpdate();
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error saving account", e);
+        } // try-catch
+
+    } // delete
+
     public Optional<Account> findByUserIdAndName(long userId, String name) {
         String sql = "SELECT * FROM Accounts Where user_id = ? AND name = ?";
         
@@ -72,6 +88,36 @@ public class AccountRepo {
         return Optional.empty();
     } // findByName
 
+
+    public Optional<Account> findByUserIdAndAccountId(long userId, long accountId) {
+        String sql = "SELECT * FROM Accounts Where user_id = ? AND account_id = ?";
+        
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, accountId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return Optional.of(mapRowToAccount(rs));
+                } // if
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error finding account by id and name", e);
+        } // try-catch
+
+        return Optional.empty();
+    } // findByUserIdAndAccountId
+    
+
+
+
+
+
+
+
+
     private Account mapRowToAccount(ResultSet rs) throws SQLException {
         return new Account(
                         rs.getLong("account_id"),
@@ -81,5 +127,4 @@ public class AccountRepo {
                         rs.getBigDecimal("balance")
                     );
     } // mapRowToUser
-    
 } // AccountRepo

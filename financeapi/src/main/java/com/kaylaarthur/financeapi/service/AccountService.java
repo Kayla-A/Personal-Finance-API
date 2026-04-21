@@ -23,4 +23,11 @@ public class AccountService {
         return accountRepo.save(account);
     } // addAccount
 
+
+
+    public void deleteAccount(long userId, long accountId) {
+        accountRepo.findByUserIdAndAccountId(userId, accountId).orElseThrow(() -> new RuntimeException("Could not find account"));
+        accountRepo.delete(userId, accountId);
+    } // deleteAccount
+
 } // AccountService

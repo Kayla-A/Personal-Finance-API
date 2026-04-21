@@ -47,6 +47,17 @@ public class Account {
         this.balance = balance;
     } // Account
 
+    /**
+     * 
+     * @param name
+     * @param type
+     * @param balance
+     */
+    public Account(long userId, String name) {
+        this.userId = userId;
+        this.name = name;
+    } // Account
+
     public long getAccountId() { return accountId; } // getAccountId
 
     public void setAccountId(long accountId) { this.accountId = accountId; } // setAccountId
