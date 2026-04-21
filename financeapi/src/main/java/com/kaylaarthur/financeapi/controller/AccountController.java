@@ -17,7 +17,6 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -44,13 +43,15 @@ public class AccountController {
     } // addAccount
 
     @GetMapping()
-    public String getAllAccounts(@RequestParam String param) {
+    public String getAllAccounts() {
         return new String();
     } // getAllAccounts
 
     @GetMapping("/{id}")
-    public String getAccount(@RequestParam String param) {
-        return new String();
+    public Account getAccount(@PathVariable long accountId) {
+        User user = securityUtility.getCurrentUser();
+        Account account = accountService.getAccount(user.getId(), accountId);
+        return account;
     } // getAccount
 
     @PutMapping("/{id}")
@@ -61,7 +62,7 @@ public class AccountController {
     } // updateAccount
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAccount(@Valid @RequestParam() long accountId) {
+    public ResponseEntity<Void> deleteAccount(@PathVariable long accountId) {
         User user = securityUtility.getCurrentUser();
         accountService.deleteAccount(user.getId(), accountId);
         return ResponseEntity.noContent().build();
