@@ -3,22 +3,24 @@ package com.kaylaarthur.financeapi.request;
 import com.kaylaarthur.financeapi.enums.Type;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
 public class AddAccountRequest {
     
-    private long userId;
     @NotBlank
+    private String name;
+    @NotNull
     private Type type;
-    @NotBlank
+    @NotNull
     private BigDecimal balance;
     
     public AddAccountRequest() {} // AddAccountRequest
 
-    public long getUserId() { return userId; } // getUserId
+     public String getName() { return name; } // getName
 
-    public void setUserId(long userId) { this.userId = userId; } // setUserId
+    public void setName(String name) { this.name = name; } // setName
 
     public Type getType() { return type; } // getType
 

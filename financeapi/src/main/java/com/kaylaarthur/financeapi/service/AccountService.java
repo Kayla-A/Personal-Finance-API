@@ -17,9 +17,10 @@ public class AccountService {
         this.accountRepo = accountRepo;
     } // AccountService
 
-    public Account addAccount(long userId, Type type, BigDecimal balance) {
-        Account account = new Account(userId, type, balance);
-       return accountRepo.saveAccount(account);
+    public Account addAccount(long userId, String name, Type type, BigDecimal balance) {
+        accountRepo.findByUserIdAndName(userId, name).ifPresent(u -> {throw new IllegalArgumentException("Account name already exists for user"); });
+        Account account = new Account(userId, name, type, balance);
+        return accountRepo.save(account);
     } // addAccount
 
 } // AccountService
