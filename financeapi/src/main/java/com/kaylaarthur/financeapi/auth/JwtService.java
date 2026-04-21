@@ -50,4 +50,13 @@ public class JwtService {
         } // try-catch
     } // isTokenValid
 
+    public String extractEmail(String token) {
+        return Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload().getSubject();
+    } // extractEmail
+
+
 } // JwtService
