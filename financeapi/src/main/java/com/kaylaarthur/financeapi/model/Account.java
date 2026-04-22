@@ -1,7 +1,8 @@
 package com.kaylaarthur.financeapi.model;
 
-import jakarta.persistence.Entity;
 import com.kaylaarthur.financeapi.enums.Type;
+
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.math.BigDecimal;
 
@@ -56,6 +57,17 @@ public class Account {
     public Account(long userId, String name) {
         this.userId = userId;
         this.name = name;
+    } // Account
+
+    /**
+     * 
+     * 
+     * @param acountId
+     * @param userId
+     */
+    public Account(long accountId, long userId) {
+        this.accountId = accountId;
+        this.userId = userId;
     } // Account
 
     public long getAccountId() { return accountId; } // getAccountId

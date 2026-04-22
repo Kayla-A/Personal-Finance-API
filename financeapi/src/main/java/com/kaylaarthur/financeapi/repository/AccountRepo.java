@@ -9,6 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -67,6 +69,48 @@ public class AccountRepo {
 
     } // delete
 
+    public Account update(Account account) {
+        String sql = "UPDATE Accounts SET name = ?, type = ?, balance = ? WHERE account_id = ? AND userID = ?";
+        
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, account.getName());
+            stmt.setString(2, account.getType().name());
+            stmt.setBigDecimal(3, account.getBalance());
+            stmt.setLong(5, account.getAccountId());
+            stmt.setLong(6, account.getUserId());
+
+            stmt.executeUpdate();
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error updating account", e);
+        } // try-catch
+
+        return account;
+    } // update
+
+    public List<Account> findAccountsByUserId(long userId) {
+        String sql = "SELECT * FROM Accounts Where user_id = ?";
+        List<Account> accounts = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    accounts.add(mapRowToAccount(rs));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error finding accounts by userId", e);
+        } // try-catch
+
+        return accounts;
+    } // findAccountsByUserId
+
     public Optional<Account> findByUserIdAndName(long userId, String name) {
         String sql = "SELECT * FROM Accounts Where user_id = ? AND name = ?";
         
@@ -104,7 +148,7 @@ public class AccountRepo {
             } // try
 
         } catch(SQLException e) {
-            throw new RuntimeException("Error finding account by id and name", e);
+            throw new RuntimeException("Error finding account by userId and accountId", e);
         } // try-catch
 
         return Optional.empty();
