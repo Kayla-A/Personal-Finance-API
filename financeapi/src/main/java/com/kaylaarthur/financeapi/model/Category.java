@@ -1,7 +1,10 @@
 package com.kaylaarthur.financeapi.model;
 
+import jakarta.persistence.Id;
+
 public class Category {
     
+    @Id
     private long categoryId;
     private long userId;
     private String categoryName;
