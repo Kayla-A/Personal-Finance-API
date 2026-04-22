@@ -170,5 +170,5 @@ public class AccountRepo {
                         Type.valueOf(rs.getString("type")),
                         rs.getBigDecimal("balance")
                     );
-    } // mapRowToUser
+    } // mapRowToAccount
 } // AccountRepo
