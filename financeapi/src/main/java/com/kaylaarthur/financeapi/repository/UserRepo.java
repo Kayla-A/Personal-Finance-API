@@ -20,7 +20,7 @@ public class UserRepo {
 
     public UserRepo(DataSource dataSource) {
         this.dataSource = dataSource;
-    } // getConnection 
+    } // UserRepo
 
     /**
      * 
@@ -67,7 +67,7 @@ public class UserRepo {
 
             try(ResultSet rs = stmt.executeQuery()) {
                 if(rs.next()) {
-                    return Optional.of(mapRowTUser(rs));
+                    return Optional.of(mapRowToUser(rs));
                 } // if
             } // try
 
@@ -92,7 +92,7 @@ public class UserRepo {
 
             try(ResultSet rs = stmt.executeQuery()) {
                 if(rs.next()) {
-                    return Optional.of(mapRowTUser(rs));
+                    return Optional.of(mapRowToUser(rs));
                 } // if
             } // try
 
@@ -109,7 +109,7 @@ public class UserRepo {
      * @return The new User entity.
      * @throws SQLException
      */
-    private User mapRowTUser(ResultSet rs) throws SQLException {
+    private User mapRowToUser(ResultSet rs) throws SQLException {
         return new User(rs.getLong("user_id"),
                         rs.getString("name"),
                         rs.getString("email"),
