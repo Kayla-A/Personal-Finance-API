@@ -1,5 +1,9 @@
 package com.kaylaarthur.financeapi.controller;
 
+import com.kaylaarthur.financeapi.request.AddTransactionRequest;
+import com.kaylaarthur.financeapi.response.AddTransactionResponse;
+import com.kaylaarthur.financeapi.model.User;
+import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.service.TransactionService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
 
@@ -8,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,14 +36,23 @@ public class TransactionController {
         this.transactionService = transactionService;
     } // TransactionController
 
-/*
-    @PostMapping()
-    public ResponseEntity<AddTransactionResponse> addTransaction(@RequestBody AddResponseRequest request) {
-        //TODO: process POST request
-        
-        return ResponseEntity.noContent().build();
-    } // addTransaction
 
+    @PostMapping()
+    public ResponseEntity<AddTransactionResponse> addTransaction(@RequestBody AddTransactionRequest request) {
+        User user = securityUtility.getCurrentUser();
+        Transaction transaction = transactionService.addTransaction(user.getId(), request);
+        AddTransactionResponse response = new AddTransactionResponse(
+            transaction.getTransactionId(),
+            transaction.getCategoryId(),
+            transaction.getAccountId(), 
+            transaction.getAmount(), 
+            transaction.getDate(), 
+            transaction.getDescription(), 
+            transaction.getTransactionType()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    } // addTransaction
+/* 
     @PutMapping("/{id}")
     public ResponsEntity<UpdateTransactionResponse> updateTransaction(@PathVariable long id, @RequestBody UpdateTransactionRequest request) {
     } // updateTransaction

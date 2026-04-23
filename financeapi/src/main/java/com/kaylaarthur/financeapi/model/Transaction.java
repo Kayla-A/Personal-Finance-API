@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 public class Transaction {
@@ -16,11 +16,11 @@ public class Transaction {
     private long categoryId;
     private long accountId;
     private BigDecimal amount;
-    private LocalDateTime date;
+    private LocalDate date;
     private String description;
     private TransactionType transactionType;
     
-    public Transaction(long transactionId, long categoryId, long accountId, BigDecimal amount, LocalDateTime date,
+    public Transaction(long transactionId, long categoryId, long accountId, BigDecimal amount, LocalDate date,
             String description, TransactionType transactionType) {
         this.transactionId = transactionId;
         this.categoryId = categoryId;
@@ -30,6 +30,20 @@ public class Transaction {
         this.description = description;
         this.transactionType = transactionType;
     } // Transaction
+
+    
+
+    public Transaction(long categoryId, long accountId, BigDecimal amount, LocalDate date, String description,
+            TransactionType transactionType) {
+        this.categoryId = categoryId;
+        this.accountId = accountId;
+        this.amount = amount;
+        this.date = date;
+        this.description = description;
+        this.transactionType = transactionType;
+    } // Transaction
+
+
 
     public long getTransactionId() { return transactionId; } // getTransactionId
 
@@ -47,9 +61,9 @@ public class Transaction {
 
     public void setAmount(BigDecimal amount) { this.amount = amount; } // setAmount
 
-    public LocalDateTime getDate() { return date; } // getDate
+    public LocalDate getDate() { return date; } // getDate
 
-    public void setDate(LocalDateTime date) { this.date = date; } // setDate
+    public void setDate(LocalDate date) { this.date = date; } // setDate
 
     public String getDescription() { return description; } // getDescription
 
