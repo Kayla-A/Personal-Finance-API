@@ -1,11 +1,8 @@
 package com.kaylaarthur.financeapi.repository;
 
-import com.kaylaarthur.financeapi.model.Account;
 import com.kaylaarthur.financeapi.model.Transaction;
-import com.kaylaarthur.financeapi.enums.Type;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
-import java.lang.foreign.Linker.Option;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -114,6 +111,59 @@ public class TransactionRepo {
 
         return Optional.empty();
     } // findByUserIdAndTransactionId
+
+    public List<Transaction> findTransactionsByAccountId(long userId, long accountId) {
+        String sql = """
+                SELECT * 
+                FROM Transactions t, Accounts a
+                WHERE a.account_id = ?
+                    AND a.user_id = ?
+                    AND t.account_id = a.account_id
+        """;
+        ArrayList<Transaction> transactions = new ArrayList<>();
+        
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, accountId);
+            stmt.setLong(2, userId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    transactions.add(mapRowToTransaction(rs));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error finding transactions by accountId", e);
+        } // try-catch
+
+        return transactions;
+    } // findTransactionsByAccountId
+
+    public List<Transaction> findTransactionsByUserId(long userId) {
+        String sql = "SELECT * FROM Transactions Where user_id = ?";
+        ArrayList<Transaction> transactions = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    transactions.add(mapRowToTransaction(rs));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error finding transactions by userId", e);
+        } // try-catch
+
+        return transactions;
+    } // findTransactionsByUserId
+
+
 
 
     private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {

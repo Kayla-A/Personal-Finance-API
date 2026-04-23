@@ -12,6 +12,8 @@ import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class TransactionService {
     
@@ -119,5 +121,21 @@ public class TransactionService {
         transactionRepo.delete(userId, transactionId);
     } // deleteTransaction
 
+
+    public Transaction getTransaction(long userId, long tranactionId) {
+        return transactionRepo.findByUserIdAndTransactionId(userId, tranactionId).orElseThrow(() -> new RuntimeException("Couldn't get transaction for user"));
+    } // getTransaction
+
+    public List<Transaction> getAllTransactions(long userId, long accountId) {
+        List<Transaction> transactions;
+
+        if(accountId == 0) {
+            transactions = transactionRepo.findTransactionsByAccountId(userId, accountId);
+        } else {
+            transactions = transactionRepo.findTransactionsByUserId(userId);
+        } // if
+
+        return transactions;
+    } // getAllTransactions
     
 } // TransactionService

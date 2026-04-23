@@ -2,6 +2,7 @@ package com.kaylaarthur.financeapi.controller;
 
 import com.kaylaarthur.financeapi.request.AddTransactionRequest;
 import com.kaylaarthur.financeapi.response.AddTransactionResponse;
+import com.kaylaarthur.financeapi.response.GetTransactionResponse;
 import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
 import com.kaylaarthur.financeapi.response.UpdateTransactionResponse;
 import com.kaylaarthur.financeapi.model.User;
@@ -77,14 +78,44 @@ public class TransactionController {
         transactionService.deleteTransaction(user.getId(), id);
         return ResponseEntity.noContent().build();
     } // deleteTransaction
-/*
+
     @GetMapping("/{id}")
-    public ResponseEntity<GetTransactionResponse> getTransaction(@PathVariable long id, @RequestBody GetTransactionRequest request) {
+    public ResponseEntity<GetTransactionResponse> getTransaction(@PathVariable long id) {
+        User user = securityUtility.getCurrentUser();
+        Transaction transaction = transactionService.getTransaction(user.getId(), id);
+        GetTransactionResponse response = new GetTransactionResponse(
+            transaction.getTransactionId(),
+            transaction.getCategoryId(),
+            transaction.getAccountId(), 
+            transaction.getAmount(), 
+            transaction.getDate(), 
+            transaction.getDescription(), 
+            transaction.getTransactionType()
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     } // getTransaction
+
 
     @GetMapping("?accountId=1")
     public ResponseEntity<List<GetTransactionResponse>> getAllTransactions(@RequestParam(required = false) long accountId) {
+        User user = securityUtility.getCurrentUser();
+        List<Transaction> transactions = transactionService.getAllTransactions(user.getId(), accountId); 
+        List<GetTransactionResponse> responses = new ArrayList<>();
+        for(Transaction transaction : transactions) {
+            responses.add(
+                new GetTransactionResponse(
+                    transaction.getTransactionId(),
+                    transaction.getCategoryId(),
+                    transaction.getAccountId(), 
+                    transaction.getAmount(), 
+                    transaction.getDate(), 
+                    transaction.getDescription(), 
+                    transaction.getTransactionType()
+                )
+            );
+        } // for each
+        return ResponseEntity.status(HttpStatus.OK).body(responses);
     } // getAllTransactions
-*/
+
 
 } // TransactionController
