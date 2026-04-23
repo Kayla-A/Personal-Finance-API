@@ -32,7 +32,6 @@ public class Transaction {
     } // Transaction
 
     
-
     public Transaction(long categoryId, long accountId, BigDecimal amount, LocalDate date, String description,
             TransactionType transactionType) {
         this.categoryId = categoryId;
@@ -42,8 +41,6 @@ public class Transaction {
         this.description = description;
         this.transactionType = transactionType;
     } // Transaction
-
-
 
     public long getTransactionId() { return transactionId; } // getTransactionId
 

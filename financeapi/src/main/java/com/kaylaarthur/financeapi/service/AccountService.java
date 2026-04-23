@@ -40,9 +40,11 @@ public class AccountService {
         if(name != null) {
             accountRepo.findByUserIdAndName(userId, name).ifPresent(u -> {throw new IllegalArgumentException("Account name already exists for user"); });
             account.setName(name);
-        } else if(type != null) {
+        } // if 
+        if(type != null) {
             account.setType(type);
-        } else if(balance != null){
+        } // if 
+        if(balance != null){
             account.setBalance(balance);
         } // if 
         

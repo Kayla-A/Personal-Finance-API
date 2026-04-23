@@ -5,6 +5,7 @@ import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.enums.Type;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
+import java.lang.foreign.Linker.Option;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,9 +58,62 @@ public class TransactionRepo {
     } // save
 
 
+    public Transaction update(Transaction transaction) {
+        String sql = "UPDATE Transactions SET amount = ?, date = ?, description = ?, transaction_type = ? WHERE tranaction_id = ? AND account_id = ?";
+        
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBigDecimal(1, transaction.getAmount());
+            stmt.setDate(2, Date.valueOf(transaction.getDate()));
+            stmt.setString(3, transaction.getDescription());
+            stmt.setString(5, transaction.getTransactionType().name());
+            stmt.setLong(6, transaction.getTransactionId());
+            stmt.setLong(6, transaction.getAccountId());
 
+            stmt.executeUpdate();
 
+        } catch(SQLException e) {
+            throw new RuntimeException("Error updating transaction", e);
+        } // try-catch
 
+        return transaction;
+    } // update
+
+    public void delete(long userId, long transactionId) {
+        String sql = "DELETE FROM Transactions WHERE user_id = ? and transaction_id = ?";
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, transactionId);
+
+            stmt.executeUpdate();
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error deleting transaction", e);
+        } // try-catch
+    } // delete
+
+    public Optional<Transaction> findByUserIdAndTransactionId(long userId, long transactionId) {
+        String sql = "SELECT * FROM Transaction Where user_id = ? AND transaction_id = ?";
+        
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, transactionId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return Optional.of(mapRowToTransaction(rs));
+                } // if
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error finding account by userId and accountId", e);
+        } // try-catch
+
+        return Optional.empty();
+    } // findByUserIdAndTransactionId
 
 
     private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {

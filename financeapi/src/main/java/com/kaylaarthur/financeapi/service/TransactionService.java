@@ -7,6 +7,7 @@ import com.kaylaarthur.financeapi.repository.AccountRepo;
 import com.kaylaarthur.financeapi.repository.CategoryRepo;
 import com.kaylaarthur.financeapi.repository.TransactionRepo;
 import com.kaylaarthur.financeapi.request.AddTransactionRequest;
+import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class TransactionService {
         this.categoryRepo = categoryRepo;
     } // TransactionService
 
+
     @Transactional
     public Transaction addTransaction(long userId, AddTransactionRequest request) {
         // check account exist & belongs to user 
@@ -35,7 +37,7 @@ public class TransactionService {
         if(request.getTransactionType() == TransactionType.EXPENSE) {
             // check for negative balance 
             if(account.getBalance().compareTo(request.getAmount()) == -1) {
-                throw new RuntimeException("Exspence results in a negative balance");
+                throw new RuntimeException("Expence results in a negative balance");
             } // if
             account.setBalance(account.getBalance().subtract(request.getAmount()));
         } else {
@@ -57,6 +59,65 @@ public class TransactionService {
 
         return transactionRepo.save(transaction);
     } // addTransaction
+
+
+    @Transactional
+    public Transaction updateTransaction(long userId, long transactionId, UpdateTransactionRequest request) {
+        // check transaction belongs to user
+        Transaction transaction = transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Transaction does not belong to user"));
+        // find account transaction belongs to 
+        Account account = accountRepo.findByUserIdAndAccountId(userId, transaction.getAccountId()).orElseThrow(() -> new RuntimeException("Account for transaction not found"));
+        // check account belongs to user
+        if(account.getUserId() != userId) {
+            throw new RuntimeException("Account does not belong to user");
+        } // if
+
+        // update transaction values 
+        if(request.getAmount() != null) {
+            // update account balance
+            if(request.getTransactionType() == TransactionType.EXPENSE) {
+                // check for negative balance 
+                if(account.getBalance().compareTo(request.getAmount()) == -1) {
+                    throw new RuntimeException("Expence results in a negative balance");
+                } // if
+                account.setBalance(account.getBalance().subtract(request.getAmount()));
+            } else {
+                account.setBalance(account.getBalance().add(request.getAmount()));
+            } // if
+
+            accountRepo.update(account); // update in database
+
+            transaction.setAmount(request.getAmount());
+        } // if
+
+        if(request.getDate() != null) {
+            transaction.setDate(request.getDate());
+        } // if
+
+        if(request.getDescription() != null) {
+            transaction.setDescription(request.getDescription());
+        } // if
+
+        if(request.getTransactionType() != null) {
+
+            // check transaction type is acceptable
+            if(request.getTransactionType() == TransactionType.EXPENSE || request.getTransactionType() == TransactionType.INCOME) {
+                throw new RuntimeException("Transaction type can only be INCOME or EXPENCE");
+            } // if
+
+            transaction.setTransactionType(request.getTransactionType());
+        } // if
+
+
+        // add transaction to database
+        return transactionRepo.update(transaction);
+    } // updateTransaction
+
+
+    public void deleteTransaction(long userId, long transactionId) {
+        transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Transaction does not belong to user"));
+        transactionRepo.delete(userId, transactionId);
+    } // deleteTransaction
 
     
 } // TransactionService

@@ -54,9 +54,9 @@ public class AccountRepo {
     } // saveAccount
 
     public void delete(long userId, long accountId) {
-         String sql = "DELETE FROM Accounts WHERE user_id = ? and name = ?";
+        String sql = "DELETE FROM Accounts WHERE user_id = ? and name = ?";
 
-       try(Connection conn = dataSource.getConnection();
+        try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             stmt.setLong(2, accountId);
@@ -64,7 +64,7 @@ public class AccountRepo {
             stmt.executeUpdate();
 
         } catch(SQLException e) {
-            throw new RuntimeException("Error saving account", e);
+            throw new RuntimeException("Error deleting account", e);
         } // try-catch
 
     } // delete
