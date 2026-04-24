@@ -6,6 +6,7 @@ import com.kaylaarthur.financeapi.response.GetTransactionResponse;
 import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
 import com.kaylaarthur.financeapi.response.UpdateTransactionResponse;
 import com.kaylaarthur.financeapi.model.User;
+import com.kaylaarthur.financeapi.enums.TransactionType;
 import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.service.TransactionService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 
@@ -96,10 +98,16 @@ public class TransactionController {
     } // getTransaction
 
 
-    @GetMapping("?accountId=1")
-    public ResponseEntity<List<GetTransactionResponse>> getAllTransactions(@RequestParam(required = false) long accountId) {
+    @GetMapping
+    public ResponseEntity<List<GetTransactionResponse>> getAllTransactions(
+        @RequestParam(required = false) Long accountId,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required =  false) TransactionType type,
+        @RequestParam(required = false) LocalDate startDate,
+        @RequestParam(required = false) LocalDate endDate
+    ) {
         User user = securityUtility.getCurrentUser();
-        List<Transaction> transactions = transactionService.getAllTransactions(user.getId(), accountId); 
+        List<Transaction> transactions = transactionService.getAllTransactions(user.getId(), accountId, categoryId, type, startDate, endDate); 
         List<GetTransactionResponse> responses = new ArrayList<>();
         for(Transaction transaction : transactions) {
             responses.add(

@@ -12,6 +12,8 @@ import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -74,68 +76,60 @@ public class TransactionService {
             throw new RuntimeException("Account does not belong to user");
         } // if
 
-        // update transaction values 
-        if(request.getAmount() != null) {
-            // update account balance
-            if(request.getTransactionType() == TransactionType.EXPENSE) {
-                // check for negative balance 
-                if(account.getBalance().compareTo(request.getAmount()) == -1) {
-                    throw new RuntimeException("Expence results in a negative balance");
-                } // if
-                account.setBalance(account.getBalance().subtract(request.getAmount()));
-            } else {
-                account.setBalance(account.getBalance().add(request.getAmount()));
-            } // if
-
-            accountRepo.update(account); // update in database
-
-            transaction.setAmount(request.getAmount());
+        BigDecimal newAmount = request.getAmount() != null ? request.getAmount() : transaction.getAmount();
+        TransactionType newType = request.getTransactionType() != null ? request.getTransactionType() : transaction.getTransactionType();
+        
+        // undo old values
+        if(transaction.getTransactionType() == TransactionType.EXPENSE) {
+            account.setBalance(account.getBalance().add(transaction.getAmount()));
+        } else {
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
         } // if
 
-        if(request.getDate() != null) {
-            transaction.setDate(request.getDate());
-        } // if
+        // apply new values
+        if(newType == TransactionType.EXPENSE) {
+            account.setBalance(account.getBalance().subtract(newAmount));
+        } else {
+            account.setBalance(account.getBalance().add(newAmount));
+        } // if 
 
-        if(request.getDescription() != null) {
-            transaction.setDescription(request.getDescription());
-        } // if
+        accountRepo.update(account); // update in database
 
-        if(request.getTransactionType() != null) {
-
-            // check transaction type is acceptable
-            if(request.getTransactionType() == TransactionType.EXPENSE || request.getTransactionType() == TransactionType.INCOME) {
-                throw new RuntimeException("Transaction type can only be INCOME or EXPENCE");
-            } // if
-
-            transaction.setTransactionType(request.getTransactionType());
-        } // if
-
+        if(request.getAmount() != null) { transaction.setAmount(request.getAmount()); } // if
+        if(request.getDate() != null) { transaction.setDate(request.getDate()); } // if
+        if(request.getDescription() != null) { transaction.setDescription(request.getDescription()); } // if
+        if(request.getTransactionType() != null) { transaction.setTransactionType(request.getTransactionType()); } // if
 
         // add transaction to database
         return transactionRepo.update(transaction);
     } // updateTransaction
 
-
+    @Transactional
     public void deleteTransaction(long userId, long transactionId) {
-        transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Transaction does not belong to user"));
-        transactionRepo.delete(userId, transactionId);
+        // check transaction belongs to user
+        Transaction transaction = transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Transaction not found"));
+        // find account transaction belongs to 
+        Account account = accountRepo.findByUserIdAndAccountId(userId, transaction.getAccountId()).orElseThrow(() -> new RuntimeException("Account for transaction not found"));
+
+        // undo old values
+        if(transaction.getTransactionType() == TransactionType.EXPENSE) {
+            account.setBalance(account.getBalance().add(transaction.getAmount()));
+        } else {
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+        } // if
+        
+        accountRepo.update(account); // update in database
+
+        transactionRepo.delete(transactionId);
     } // deleteTransaction
 
 
-    public Transaction getTransaction(long userId, long tranactionId) {
-        return transactionRepo.findByUserIdAndTransactionId(userId, tranactionId).orElseThrow(() -> new RuntimeException("Couldn't get transaction for user"));
+    public Transaction getTransaction(long userId, long transactionId) {
+        return transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Couldn't get transaction for user"));
     } // getTransaction
 
-    public List<Transaction> getAllTransactions(long userId, long accountId) {
-        List<Transaction> transactions;
-
-        if(accountId == 0) {
-            transactions = transactionRepo.findTransactionsByAccountId(userId, accountId);
-        } else {
-            transactions = transactionRepo.findTransactionsByUserId(userId);
-        } // if
-
-        return transactions;
+    public List<Transaction> getAllTransactions(long userId, long accountId, long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
+        return transactionRepo.findAllTransactions(userId, accountId, categoryId, type, startDate, endDate);
     } // getAllTransactions
     
 } // TransactionService

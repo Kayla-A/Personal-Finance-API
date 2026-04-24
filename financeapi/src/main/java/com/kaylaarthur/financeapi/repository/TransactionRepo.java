@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.sql.Date;
 import java.util.Optional;
 import java.util.ArrayList;
@@ -56,15 +57,15 @@ public class TransactionRepo {
 
 
     public Transaction update(Transaction transaction) {
-        String sql = "UPDATE Transactions SET amount = ?, date = ?, description = ?, transaction_type = ? WHERE tranaction_id = ? AND account_id = ?";
+        String sql = "UPDATE Transactions SET amount = ?, date = ?, description = ?, transaction_type = ? WHERE transaction_id = ? AND account_id = ?";
         
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setBigDecimal(1, transaction.getAmount());
             stmt.setDate(2, Date.valueOf(transaction.getDate()));
             stmt.setString(3, transaction.getDescription());
-            stmt.setString(5, transaction.getTransactionType().name());
-            stmt.setLong(6, transaction.getTransactionId());
+            stmt.setString(4, transaction.getTransactionType().name());
+            stmt.setLong(5, transaction.getTransactionId());
             stmt.setLong(6, transaction.getAccountId());
 
             stmt.executeUpdate();
@@ -76,15 +77,18 @@ public class TransactionRepo {
         return transaction;
     } // update
 
-    public void delete(long userId, long transactionId) {
-        String sql = "DELETE FROM Transactions WHERE user_id = ? and transaction_id = ?";
+    public void delete(long transactionId) {
+        String sql = "DELETE FROM Transactions WHERE transaction_id = ?";
 
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, userId);
-            stmt.setLong(2, transactionId);
+            stmt.setLong(1, transactionId);
 
-            stmt.executeUpdate();
+            int row = stmt.executeUpdate();
+
+            if(row == 0) {
+                throw new RuntimeException("Error finding or deleting transaction");
+            } // if
 
         } catch(SQLException e) {
             throw new RuntimeException("Error deleting transaction", e);
@@ -92,8 +96,15 @@ public class TransactionRepo {
     } // delete
 
     public Optional<Transaction> findByUserIdAndTransactionId(long userId, long transactionId) {
-        String sql = "SELECT * FROM Transaction Where user_id = ? AND transaction_id = ?";
-        
+        String sql = """
+            SELECT t.* 
+            FROM Transactions t 
+            JOIN accounts a 
+            ON t.account_id = a.account_id
+            Where a.user_id = ? 
+                AND t.transaction_id = ?";
+        """;
+
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
@@ -106,26 +117,57 @@ public class TransactionRepo {
             } // try
 
         } catch(SQLException e) {
-            throw new RuntimeException("Error finding account by userId and accountId", e);
+            throw new RuntimeException("Error finding transaction by userId and transactionId", e);
         } // try-catch
 
         return Optional.empty();
     } // findByUserIdAndTransactionId
 
-    public List<Transaction> findTransactionsByAccountId(long userId, long accountId) {
-        String sql = """
+    public List<Transaction> findAllTransactions(long userId, Long accountId, Long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
+        StringBuilder sql = new StringBuilder("""
                 SELECT * 
-                FROM Transactions t, Accounts a
-                WHERE a.account_id = ?
-                    AND a.user_id = ?
-                    AND t.account_id = a.account_id
-        """;
-        ArrayList<Transaction> transactions = new ArrayList<>();
+                FROM Transactions t
+                JOIN Accounts a
+                ON t.account_id = a.account_id
+                WHERE a.user_id = ?
+                ORDER BY t.date DESC
+        """);
         
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+        if(accountId != null) {
+            sql.append("AND t.account_id = ?");
+            params.add(accountId);
+        } // if
+
+        if(categoryId != null) {
+            sql.append("AND t.category_id = ?");
+            params.add(categoryId);
+        } // if
+
+        if(type != null) {
+            sql.append("AND t.transaction_type_id = ?");
+            params.add(type.name());
+        } // if
+
+        if(startDate != null) {
+            sql.append("AND t.date_id >= ?");
+            params.add(Date.valueOf(startDate));
+        } // if
+
+        if(endDate != null) {
+            sql.append("AND t.date_id <= ?");
+            params.add(Date.valueOf(endDate));
+        } // if
+
+        ArrayList<Transaction> transactions = new ArrayList<>();
+
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, accountId);
-            stmt.setLong(2, userId);
+            PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            
+            for(int i = 0; i < params.size(); i++) {
+                stmt.setLong(i + 1, userId);
+            } // for
 
             try(ResultSet rs = stmt.executeQuery()) {
                 while(rs.next()) {
@@ -135,7 +177,7 @@ public class TransactionRepo {
             } // try
 
         } catch(SQLException e) {
-            throw new RuntimeException("Error finding transactions by accountId", e);
+            throw new RuntimeException("Error finding transactions", e);
         } // try-catch
 
         return transactions;
