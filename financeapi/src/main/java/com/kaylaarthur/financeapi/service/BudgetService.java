@@ -8,7 +8,9 @@ import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.Budget;
 import com.kaylaarthur.financeapi.repository.BudgetRepo;
 import com.kaylaarthur.financeapi.request.AddBudgetRequest;
-import com.kaylaarthur.financeapi.request.UpdateBudgetResquest;
+import com.kaylaarthur.financeapi.request.UpdateBudgetRequest;
+
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -22,47 +24,42 @@ public class BudgetService {
     } // BudgetService
 
     public Budget addBudget(long userId, AddBudgetRequest request) {
-        // check users match
-        if(userId != request.getUserId()) {throw new RuntimeException("Requesting users do not match"); }
-        
         Budget budget = new Budget(
-            request.getUserId(),
+            userId,
             request.getCategoryId(),
             request.getBudgetLimit(),
             request.getPeriod()
         );
 
         // check budget doesn't already exist
-        budgetRepo.findByUserIdAndCategoeyIdAndPeriod(
+        budgetRepo.findByUserIdAndCategoryIdAndPeriod(
             budget.getUserId(), 
             budget.getCategoryId(), 
             budget.getPeriod()
-        ).ifPresent(u -> {throw new IllegalArgumentException("Budget not unique by category and period"); });
+        ).ifPresent(u -> { throw new IllegalArgumentException("Budget not unique by category and period"); });
         
         return budgetRepo.save(budget);
     } // addBudget
 
-    public Budget updateBudget(long userId, long budgetId, UpdateBudgetResquest request) {
+    @Transactional
+    public Budget updateBudget(long userId, long budgetId, UpdateBudgetRequest request) {
         // check for & get budget
-        Budget budget = budgetRepo.findByUserIdAndBudgetId(userId, budgetId).orElseThrow(() -> new RuntimeException("Budget not found"));
+        Budget budget = budgetRepo.findByUserIdAndBudgetId(userId, budgetId)
+            .orElseThrow( () -> new RuntimeException("Budget not found"));
         
-        if(request.getCategoryId() != null) {
-            budgetRepo.findByUserIdAndCategoeyIdAndPeriod(
-                budget.getUserId(), 
-                request.getCategoryId(), 
-                budget.getPeriod()
-            ).ifPresent(u -> {throw new IllegalArgumentException("Budget not unique by category and period"); });
-            budget.setCategoryId(request.getCategoryId());
-        } // if
+        Long newCategoryId = request.getCategoryId() != null ? request.getCategoryId() : budget.getCategoryId();
+        BudgetInterval newPeriod = request.getPeriod() != null ? request.getPeriod() : budget.getPeriod();
+
+        budgetRepo.findByUserIdAndCategoryIdAndPeriod(userId, newCategoryId, newPeriod)
+            .ifPresent(existingBudget -> {
+                if(existingBudget.getBudgetId() != budgetId) {
+                    throw new IllegalArgumentException("Budget not unique by category and period");
+                } // if
+            });
+
+        if(request.getCategoryId() != null) { budget.setCategoryId(request.getCategoryId()); } // if
         if(request.getBudgetLimit() != null) { budget.setBudgetLimit(request.getBudgetLimit()); } // if
-        if(request.getPeriod() != null) {
-            budgetRepo.findByUserIdAndCategoeyIdAndPeriod(
-                budget.getUserId(), 
-                budget.getCategoryId(), 
-                request.getPeriod()
-            ).ifPresent(u -> {throw new IllegalArgumentException("Budget not unique by category and period"); });
-            budget.setPeriod(request.getPeriod());
-        } // if
+        if(request.getPeriod() != null) { budget.setPeriod(request.getPeriod()); } // if
 
         return budgetRepo.update(budget);
     } // updateBudget
@@ -72,8 +69,8 @@ public class BudgetService {
         budgetRepo.delete(budgetId);
     } // deleteBudget
 
-    public Budget getBudget(long usertId, long budgetId) {
-        return budgetRepo.findByUserIdAndBudgetId(usertId, budgetId).orElseThrow(() -> new RuntimeException("Budget not found"));
+    public Budget getBudget(long userId, long budgetId) {
+        return budgetRepo.findByUserIdAndBudgetId(userId, budgetId).orElseThrow(() -> new RuntimeException("Budget not found"));
     } // getBudget
 
     public List<Budget> getAllBudgets(long userId, Long categoryId, BigDecimal minLimit, BigDecimal maxLimit, BudgetInterval period) {

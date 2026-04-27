@@ -2,7 +2,7 @@ package com.kaylaarthur.financeapi.controller;
 
 import com.kaylaarthur.financeapi.model.User;
 import com.kaylaarthur.financeapi.request.AddBudgetRequest;
-import com.kaylaarthur.financeapi.request.UpdateBudgetResquest;
+import com.kaylaarthur.financeapi.request.UpdateBudgetRequest;
 import com.kaylaarthur.financeapi.response.BudgetResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.Budget;
@@ -44,31 +44,18 @@ public class BudgetController {
     public ResponseEntity<BudgetResponse> addBudget(@RequestBody AddBudgetRequest request) {
         User user = securityUtility.getCurrentUser();
         Budget budget = budgetService.addBudget(user.getId(), request);
-        BudgetResponse response = new BudgetResponse(
-            budget.getBudgetId(),
-            budget.getUserId(),
-            budget.getCategoryId(),
-            budget.getBudgetLimit(),
-            budget.getPeriod()
-        );
+        BudgetResponse response = mapToResponse(budget);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     } // addBudget
     
     @PutMapping("/{id}")
-    public ResponseEntity<BudgetResponse> updateBudget(@PathVariable long id, @RequestBody UpdateBudgetResquest request) {
+    public ResponseEntity<BudgetResponse> updateBudget(@PathVariable long id, @RequestBody UpdateBudgetRequest request) {
         User user = securityUtility.getCurrentUser();
         Budget budget = budgetService.updateBudget(user.getId(), id, request);
-        BudgetResponse response = new BudgetResponse(
-            budget.getBudgetId(),
-            budget.getUserId(),
-            budget.getCategoryId(),
-            budget.getBudgetLimit(),
-            budget.getPeriod()
-        );
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(budget));
     } // updateBudget
     
-    @DeleteMapping("/{id")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBudget(@PathVariable long id) {
         User user = securityUtility.getCurrentUser();
         budgetService.deleteBudget(user.getId(), id);
@@ -79,14 +66,7 @@ public class BudgetController {
     public ResponseEntity<BudgetResponse> getBudget(@PathVariable long id) {
         User user = securityUtility.getCurrentUser();
         Budget budget = budgetService.getBudget(user.getId(), id);
-        BudgetResponse response = new BudgetResponse(
-            budget.getBudgetId(),
-            budget.getUserId(),
-            budget.getCategoryId(),
-            budget.getBudgetLimit(),
-            budget.getPeriod()
-        );
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(budget));
     } // getBudget
 
     @GetMapping
@@ -100,18 +80,19 @@ public class BudgetController {
         List<Budget> budgets = budgetService.getAllBudgets(user.getId(), categoryId, minLimit, maxLimit, period);
         List<BudgetResponse> responses = new ArrayList<>();
         for(Budget budget : budgets) {
-            responses.add(
-                new BudgetResponse(
+            responses.add(mapToResponse(budget));
+        } // for
+        return ResponseEntity.status(HttpStatus.OK).body(responses);
+    } // getAllBudgets
+    
+    private BudgetResponse mapToResponse(Budget budget) {
+        return new BudgetResponse(
                     budget.getBudgetId(),
                     budget.getUserId(),
                     budget.getCategoryId(),
                     budget.getBudgetLimit(),
                     budget.getPeriod()
-                )
-            );
-        } // for
-        return ResponseEntity.status(HttpStatus.OK).body(responses);
-    } // getAllBudgets
-    
+                );
+    } // mapToResponse
     
 } // BudgetController

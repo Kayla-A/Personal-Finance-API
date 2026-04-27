@@ -6,14 +6,14 @@ import com.kaylaarthur.financeapi.enums.BudgetInterval;
 
 import jakarta.validation.constraints.DecimalMin;
 
-public class UpdateBudgetResquest {
+public class UpdateBudgetRequest {
     
     private long categoryId;
     @DecimalMin("0.01")
     private BigDecimal budgetLimit;
     private BudgetInterval period;
     
-    public UpdateBudgetResquest() {} // UpdateBudgetResquest
+    public UpdateBudgetRequest() {} // UpdateBudgetResquest
 
     public Long getCategoryId() { return categoryId; }
 

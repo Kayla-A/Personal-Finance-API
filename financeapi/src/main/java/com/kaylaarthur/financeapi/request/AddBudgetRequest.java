@@ -10,9 +10,7 @@ import jakarta.validation.constraints.NotNull;
 public class AddBudgetRequest {
    
     @NotNull
-    private long userId;
-    @NotNull
-    private long categoryId;
+    private Long categoryId;
     @NotNull
     @DecimalMin("0.01")
     private BigDecimal budgetLimit;
@@ -20,13 +18,9 @@ public class AddBudgetRequest {
    
     public AddBudgetRequest() {} // AddBudgetRequest
 
-    public long getUserId() { return userId; }
-
-    public void setUserId(long userId) { this.userId = userId; }
-
     public long getCategoryId() {  return categoryId; }
 
-    public void setCategoryId(long categoryId) { this.categoryId = categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
 
     public BigDecimal getBudgetLimit() { return budgetLimit; }
 

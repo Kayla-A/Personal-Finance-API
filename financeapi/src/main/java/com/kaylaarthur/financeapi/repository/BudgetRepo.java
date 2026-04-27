@@ -55,13 +55,15 @@ public class BudgetRepo {
     } // save 
 
     public Budget update(Budget budget) {
-        String sql = "UPDATE Budgets SET category_id = ?, budget_limit = ?, period = ?";
+        String sql = "UPDATE Budgets SET category_id = ?, budget_limit = ?, period = ? WHERE budget_id = ? AND user_id = ?";
 
          try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, budget.getCategoryId());
             stmt.setBigDecimal(2, budget.getBudgetLimit());
             stmt.setString(3, budget.getPeriod().name());
+            stmt.setLong(4, budget.getBudgetId());
+            stmt.setLong(5, budget.getUserId());
             
             stmt.executeUpdate();
 
@@ -81,8 +83,8 @@ public class BudgetRepo {
 
             int row = stmt.executeUpdate();
 
-            if(row == 0) {
-                throw new RuntimeException("Error finding or deleting budget");
+            if(row != 1) {
+                throw new RuntimeException("Error deleting budget");
             } // if
 
         } catch(SQLException e) {
@@ -91,7 +93,7 @@ public class BudgetRepo {
     } // delete
 
 
-    public Optional<Budget> findByUserIdAndCategoeyIdAndPeriod( long userId, long categoryId, BudgetInterval period) {
+    public Optional<Budget> findByUserIdAndCategoryIdAndPeriod( long userId, Long categoryId, BudgetInterval period) {
         String sql = """
             SELECT * 
             FROM Budgets
@@ -151,26 +153,26 @@ public class BudgetRepo {
         params.add(userId);
 
         if(categoryId != null) {
-            sql.append("AND categroy_id = ?");
+            sql.append(" AND category_id = ?");
             params.add(categoryId);
         } // if
 
         if(minLimit != null) {
-            sql.append("AND budget_limit >= ?");
+            sql.append(" AND budget_limit >= ?");
             params.add(minLimit);
         } // if
 
         if(maxLimit != null) {
-            sql.append("AND budget_limit =< ?");
+            sql.append(" AND budget_limit <= ?");
             params.add(maxLimit);
         } // if
 
         if(period != null) {
-            sql.append("AND period = ?");
-            params.add(period);
+            sql.append(" AND period = ?");
+            params.add(period.name());
         } // if
 
-        ArrayList<Budget> budgets = new ArrayList<>();
+        List<Budget> budgets = new ArrayList<>();
         
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
@@ -187,7 +189,7 @@ public class BudgetRepo {
             } // try
 
         } catch(SQLException e) {
-            throw new RuntimeException("Error finding transactions", e);
+            throw new RuntimeException("Error finding budgets", e);
         } // try-catch
         return budgets;
     } // findAllBudgets
