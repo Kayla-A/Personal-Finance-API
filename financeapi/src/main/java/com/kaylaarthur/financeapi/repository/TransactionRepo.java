@@ -86,8 +86,8 @@ public class TransactionRepo {
 
             int row = stmt.executeUpdate();
 
-            if(row == 0) {
-                throw new RuntimeException("Error finding or deleting transaction");
+            if(row != 1) {
+                throw new RuntimeException("Error deleting transaction");
             } // if
 
         } catch(SQLException e) {
@@ -102,7 +102,7 @@ public class TransactionRepo {
             JOIN accounts a 
             ON t.account_id = a.account_id
             Where a.user_id = ? 
-                AND t.transaction_id = ?";
+                AND t.transaction_id = ?
         """;
 
         try(Connection conn = dataSource.getConnection();
@@ -136,37 +136,37 @@ public class TransactionRepo {
         List<Object> params = new ArrayList<>();
         params.add(userId);
         if(accountId != null) {
-            sql.append("AND t.account_id = ?");
+            sql.append(" AND t.account_id = ?");
             params.add(accountId);
         } // if
 
         if(categoryId != null) {
-            sql.append("AND t.category_id = ?");
+            sql.append(" AND t.category_id = ?");
             params.add(categoryId);
         } // if
 
         if(type != null) {
-            sql.append("AND t.transaction_type_id = ?");
+            sql.append(" AND t.transaction_type_id = ?");
             params.add(type.name());
         } // if
 
         if(startDate != null) {
-            sql.append("AND t.date_id >= ?");
+            sql.append(" AND t.date_id >= ?");
             params.add(Date.valueOf(startDate));
         } // if
 
         if(endDate != null) {
-            sql.append("AND t.date_id <= ?");
+            sql.append(" AND t.date_id <= ?");
             params.add(Date.valueOf(endDate));
         } // if
 
-        ArrayList<Transaction> transactions = new ArrayList<>();
+        List<Transaction> transactions = new ArrayList<>();
 
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             
             for(int i = 0; i < params.size(); i++) {
-                stmt.setLong(i + 1, userId);
+                stmt.setObject(i + 1, params.get(i));
             } // for
 
             try(ResultSet rs = stmt.executeQuery()) {
@@ -185,7 +185,7 @@ public class TransactionRepo {
 
     public List<Transaction> findTransactionsByUserId(long userId) {
         String sql = "SELECT * FROM Transactions Where user_id = ?";
-        ArrayList<Transaction> transactions = new ArrayList<>();
+        List<Transaction> transactions = new ArrayList<>();
 
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
