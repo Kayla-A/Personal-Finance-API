@@ -1,17 +1,12 @@
-package com.kaylaarthur.financeapi.model;
-
-import com.kaylaarthur.financeapi.enums.TransactionType;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+package com.kaylaarthur.financeapi.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Entity
-public class Transaction {
+import com.kaylaarthur.financeapi.enums.TransactionType;
+
+public class GetTransactionResponse {
     
-    @Id
     private long transactionId;
     private long categoryId;
     private long accountId;
@@ -19,20 +14,8 @@ public class Transaction {
     private LocalDate date;
     private String description;
     private TransactionType transactionType;
-    
-    public Transaction(long transactionId, long categoryId, long accountId, BigDecimal amount, LocalDate date,
-            String description, TransactionType transactionType) {
-        this.transactionId = transactionId;
-        this.categoryId = categoryId;
-        this.accountId = accountId;
-        this.amount = amount;
-        this.date = date;
-        this.description = description;
-        this.transactionType = transactionType;
-    } // Transaction
 
-    
-    public Transaction(long categoryId, long accountId, BigDecimal amount, LocalDate date, String description,
+    public GetTransactionResponse(long tranactionId, long categoryId, long accountId, BigDecimal amount, LocalDate date, String description,
             TransactionType transactionType) {
         this.categoryId = categoryId;
         this.accountId = accountId;
@@ -69,5 +52,5 @@ public class Transaction {
     public TransactionType getTransactionType() { return transactionType; } // getTransactionType
 
     public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; } // setTransactionType
-
-} // Transaction
+    
+} // GetTransactionResponse
