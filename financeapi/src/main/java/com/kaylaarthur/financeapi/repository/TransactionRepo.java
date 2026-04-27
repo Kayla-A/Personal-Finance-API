@@ -102,7 +102,7 @@ public class TransactionRepo {
             JOIN accounts a 
             ON t.account_id = a.account_id
             Where a.user_id = ? 
-                AND t.transaction_id = ?";
+                AND t.transaction_id = ?
         """;
 
         try(Connection conn = dataSource.getConnection();
@@ -166,7 +166,7 @@ public class TransactionRepo {
             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             
             for(int i = 0; i < params.size(); i++) {
-                stmt.setLong(i + 1, userId);
+                stmt.setObject(i + 1, params.get(i));
             } // for
 
             try(ResultSet rs = stmt.executeQuery()) {
