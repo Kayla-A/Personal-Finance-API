@@ -2,9 +2,7 @@ package com.kaylaarthur.financeapi.controller;
 
 import com.kaylaarthur.financeapi.request.AddAccountRequest;
 import com.kaylaarthur.financeapi.request.UpdateAccountRequest;
-import com.kaylaarthur.financeapi.response.AddAccountResponse;
-import com.kaylaarthur.financeapi.response.UpdateAccountResponse;
-import com.kaylaarthur.financeapi.response.GetAccountResponse;
+import com.kaylaarthur.financeapi.response.AccountResponse;
 import com.kaylaarthur.financeapi.service.AccountService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
 import com.kaylaarthur.financeapi.model.Account;
@@ -40,38 +38,35 @@ public class AccountController {
     } // AccountController
 
     @PostMapping()
-    public ResponseEntity<AddAccountResponse> addAccount(@Valid @RequestBody AddAccountRequest request) {
+    public ResponseEntity<AccountResponse> addAccount(@Valid @RequestBody AddAccountRequest request) {
         User user = securityUtility.getCurrentUser(); 
         Account account = accountService.addAccount(user.getId(), request.getName(), request.getType(), request.getBalance());
-        AddAccountResponse response = new AddAccountResponse(account.getAccountId(), user.getId(), account.getName(), account.getType(), account.getBalance());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(account));
     } // addAccount
 
     @GetMapping
-    public ResponseEntity<List<GetAccountResponse>> getAllAccounts() {
+    public ResponseEntity<List<AccountResponse>> getAllAccounts() {
         User user = securityUtility.getCurrentUser();
         List<Account> accounts = accountService.getAllAccounts(user.getId());
-        List<GetAccountResponse> response = new ArrayList<>();
+        List<AccountResponse> response = new ArrayList<>();
         for(Account account : accounts) {
-            response.add(new GetAccountResponse(account.getAccountId(), account.getUserId(), account.getName(), account.getType(), account.getBalance()));
+            response.add(mapToResponse(account));
         } // for each
         return ResponseEntity.status(HttpStatus.OK).body(response);
     } // getAllAccounts
 
     @GetMapping("/{id}")
-    public ResponseEntity<GetAccountResponse> getAccount(@PathVariable long id) {
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable long id) {
         User user = securityUtility.getCurrentUser();
         Account account = accountService.getAccount(user.getId(), id);
-        GetAccountResponse response = new GetAccountResponse(account.getAccountId(), account.getUserId(), account.getName(), account.getType(), account.getBalance());
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(account));
     } // getAccount
 
     @PutMapping("/{id}")
-    public ResponseEntity<UpdateAccountResponse> updateAccount(@PathVariable long id, @RequestBody UpdateAccountRequest request) {
+    public ResponseEntity<AccountResponse> updateAccount(@PathVariable long id, @RequestBody UpdateAccountRequest request) {
         User user = securityUtility.getCurrentUser();
         Account account = accountService.updateAccount(id, user.getId(), request.getName(), request.getType(), request.getBalance());
-        UpdateAccountResponse response = new UpdateAccountResponse(account.getAccountId(), account.getUserId(), account.getName(), account.getType(), account.getBalance());
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(account));
     } // updateAccount
 
     @DeleteMapping("/{id}")
@@ -80,5 +75,15 @@ public class AccountController {
         accountService.deleteAccount(user.getId(), id);
         return ResponseEntity.noContent().build();
     } // deleteAccount    
+    
+    private AccountResponse mapToResponse(Account account) {
+        return new AccountResponse(
+            account.getAccountId(),
+            account.getUserId(),
+            account.getName(),
+            account.getType(),
+            account.getBalance()
+        );
+    } // mapToResponse 
     
 } // AccountController
