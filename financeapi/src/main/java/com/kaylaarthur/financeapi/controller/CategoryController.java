@@ -63,7 +63,7 @@ public class CategoryController {
         return ResponseEntity.noContent().build();
     } // deleteCategory
 
-    @GetMapping("{/id")
+    @GetMapping("/{id}")
     public ResponseEntity<GetCategoryResponse> getCategory(@PathVariable long id) {
         User user = securityUtility.getCurrentUser();
         Category category = categoryService.getCategory(id, user.getId());

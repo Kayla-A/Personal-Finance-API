@@ -2,6 +2,7 @@ package com.kaylaarthur.financeapi.model;
 
 import com.kaylaarthur.financeapi.enums.Type;
 
+import jakarta.validation.constraints.Size;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ public class Account {
     @Id
     private long accountId;
     private long userId;
+    @Size(max=20)
     private String name;
     private Type type;
     private BigDecimal balance;

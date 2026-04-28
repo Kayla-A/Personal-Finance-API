@@ -4,12 +4,14 @@ import com.kaylaarthur.financeapi.enums.Type;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
 public class AddAccountRequest {
     
     @NotBlank
+    @Size(max=20)
     private String name;
     @NotNull
     private Type type;
@@ -18,7 +20,7 @@ public class AddAccountRequest {
     
     public AddAccountRequest() {} // AddAccountRequest
 
-     public String getName() { return name; } // getName
+    public String getName() { return name; } // getName
 
     public void setName(String name) { this.name = name; } // setName
 
