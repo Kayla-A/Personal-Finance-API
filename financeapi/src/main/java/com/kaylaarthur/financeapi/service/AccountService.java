@@ -34,11 +34,16 @@ public class AccountService {
     } // getAccount
 
     public Account updateAccount(long accountId, long userId, String name, Type type, BigDecimal balance) {
-        accountRepo.findByUserIdAndAccountId(userId, accountId).orElseThrow(() -> new RuntimeException("Account not found"));
-        Account account = new Account(accountId, userId);
+        Account account = accountRepo.findByUserIdAndAccountId(userId, accountId)
+            .orElseThrow(() -> new RuntimeException("Account not found"));
         
         if(name != null) {
-            accountRepo.findByUserIdAndName(userId, name).ifPresent(u -> {throw new IllegalArgumentException("Account name already exists for user"); });
+            accountRepo.findByUserIdAndName(userId, name)
+                .ifPresent(existing -> {
+                    if(existing.getAccountId() != accountId) {
+                        throw new IllegalArgumentException("Account name already exists for user");
+                    } // if
+                });
             account.setName(name);
         } // if 
         if(type != null) {
@@ -47,7 +52,7 @@ public class AccountService {
         if(balance != null){
             account.setBalance(balance);
         } // if 
-        
+
         return accountRepo.update(account);
     } // updateAccount
 

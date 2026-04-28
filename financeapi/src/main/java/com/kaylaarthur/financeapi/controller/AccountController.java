@@ -37,7 +37,7 @@ public class AccountController {
         this.securityUtility = securityUtility;
     } // AccountController
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<AccountResponse> addAccount(@Valid @RequestBody AddAccountRequest request) {
         User user = securityUtility.getCurrentUser(); 
         Account account = accountService.addAccount(user.getId(), request.getName(), request.getType(), request.getBalance());

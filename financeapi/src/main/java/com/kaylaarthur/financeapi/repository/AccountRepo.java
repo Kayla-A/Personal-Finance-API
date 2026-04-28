@@ -54,7 +54,7 @@ public class AccountRepo {
     } // saveAccount
 
     public void delete(long userId, long accountId) {
-        String sql = "DELETE FROM Accounts WHERE user_id = ? and name = ?";
+        String sql = "DELETE FROM Accounts WHERE user_id = ? and account_id = ?";
 
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -70,17 +70,21 @@ public class AccountRepo {
     } // delete
 
     public Account update(Account account) {
-        String sql = "UPDATE Accounts SET name = ?, type = ?, balance = ? WHERE account_id = ? AND userID = ?";
+        String sql = "UPDATE Accounts SET name = ?, type = ?, balance = ? WHERE account_id = ? AND user_id = ?";
         
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, account.getName());
             stmt.setString(2, account.getType().name());
             stmt.setBigDecimal(3, account.getBalance());
-            stmt.setLong(5, account.getAccountId());
-            stmt.setLong(6, account.getUserId());
+            stmt.setLong(4, account.getAccountId());
+            stmt.setLong(5, account.getUserId());
 
-            stmt.executeUpdate();
+            int rows = stmt.executeUpdate();
+            System.out.println("Rows updated " + rows);
+            if(rows == 0) {
+                throw new RuntimeException("No account updated - account not found or missing");
+            } // if
 
         } catch(SQLException e) {
             throw new RuntimeException("Error updating account", e);

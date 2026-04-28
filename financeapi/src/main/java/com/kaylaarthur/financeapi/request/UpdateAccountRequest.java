@@ -2,31 +2,18 @@ package com.kaylaarthur.financeapi.request;
 
 import com.kaylaarthur.financeapi.enums.Type;
 
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 
 public class UpdateAccountRequest {
     
+    @Size(max=20)
     private String name;
     private Type type;
     private BigDecimal balance;
-    
-    public UpdateAccountRequest(String name, Type type, BigDecimal balance) {
-        this.name = name;
-        this.type = type;
-        this.balance = balance;
-    } // UpdateAccountResponse
 
-    public UpdateAccountRequest(String name) {
-        this.name = name;
-    } // UpdateAccountResponse
-
-    public UpdateAccountRequest(Type type) {
-        this.type = type;
-    } // UpdateAccountResponse
-
-    public UpdateAccountRequest(BigDecimal balance) {
-        this.balance = balance;
-    } // UpdateAccountResponse
+    public UpdateAccountRequest() {} // UpdateAccountRequest
 
     public String getName() { return name; } // getName
 
