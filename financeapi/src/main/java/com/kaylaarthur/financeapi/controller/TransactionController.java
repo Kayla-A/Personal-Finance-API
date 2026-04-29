@@ -1,10 +1,8 @@
 package com.kaylaarthur.financeapi.controller;
 
 import com.kaylaarthur.financeapi.request.AddTransactionRequest;
-import com.kaylaarthur.financeapi.response.AddTransactionResponse;
-import com.kaylaarthur.financeapi.response.GetTransactionResponse;
+import com.kaylaarthur.financeapi.response.TransactionResponse;
 import com.kaylaarthur.financeapi.request.UpdateTransactionRequest;
-import com.kaylaarthur.financeapi.response.UpdateTransactionResponse;
 import com.kaylaarthur.financeapi.model.User;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 import com.kaylaarthur.financeapi.model.Transaction;
@@ -43,35 +41,17 @@ public class TransactionController {
 
 
     @PostMapping()
-    public ResponseEntity<AddTransactionResponse> addTransaction(@RequestBody AddTransactionRequest request) {
+    public ResponseEntity<TransactionResponse> addTransaction(@RequestBody AddTransactionRequest request) {
         User user = securityUtility.getCurrentUser();
         Transaction transaction = transactionService.addTransaction(user.getId(), request);
-        AddTransactionResponse response = new AddTransactionResponse(
-            transaction.getTransactionId(),
-            transaction.getCategoryId(),
-            transaction.getAccountId(), 
-            transaction.getAmount(), 
-            transaction.getDate(), 
-            transaction.getDescription(), 
-            transaction.getTransactionType()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(transaction));
     } // addTransaction
  
     @PutMapping("/{id}")
-    public ResponseEntity<UpdateTransactionResponse> updateTransaction(@PathVariable long id, @RequestBody UpdateTransactionRequest request) {
+    public ResponseEntity<TransactionResponse> updateTransaction(@PathVariable long id, @RequestBody UpdateTransactionRequest request) {
         User user = securityUtility.getCurrentUser();
         Transaction transaction = transactionService.updateTransaction(user.getId(), id, request);
-        UpdateTransactionResponse response = new UpdateTransactionResponse(
-            transaction.getTransactionId(),
-            transaction.getCategoryId(),
-            transaction.getAccountId(), 
-            transaction.getAmount(), 
-            transaction.getDate(), 
-            transaction.getDescription(), 
-            transaction.getTransactionType()
-        );
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(transaction));
     } // updateTransaction
 
     @DeleteMapping("/{id}")
@@ -82,24 +62,15 @@ public class TransactionController {
     } // deleteTransaction
 
     @GetMapping("/{id}")
-    public ResponseEntity<GetTransactionResponse> getTransaction(@PathVariable long id) {
+    public ResponseEntity<TransactionResponse> getTransaction(@PathVariable long id) {
         User user = securityUtility.getCurrentUser();
         Transaction transaction = transactionService.getTransaction(user.getId(), id);
-        GetTransactionResponse response = new GetTransactionResponse(
-            transaction.getTransactionId(),
-            transaction.getCategoryId(),
-            transaction.getAccountId(), 
-            transaction.getAmount(), 
-            transaction.getDate(), 
-            transaction.getDescription(), 
-            transaction.getTransactionType()
-        );
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(transaction));
     } // getTransaction
 
 
     @GetMapping
-    public ResponseEntity<List<GetTransactionResponse>> getAllTransactions(
+    public ResponseEntity<List<TransactionResponse>> getAllTransactions(
         @RequestParam(required = false) Long accountId,
         @RequestParam(required = false) Long categoryId,
         @RequestParam(required =  false) TransactionType type,
@@ -108,10 +79,15 @@ public class TransactionController {
     ) {
         User user = securityUtility.getCurrentUser();
         List<Transaction> transactions = transactionService.getAllTransactions(user.getId(), accountId, categoryId, type, startDate, endDate); 
-        List<GetTransactionResponse> responses = new ArrayList<>();
+        List<TransactionResponse> responses = new ArrayList<>();
         for(Transaction transaction : transactions) {
-            responses.add(
-                new GetTransactionResponse(
+            responses.add(mapToResponse(transaction));
+        } // for each
+        return ResponseEntity.status(HttpStatus.OK).body(responses);
+    } // getAllTransactions
+
+    TransactionResponse mapToResponse(Transaction transaction) {
+        return new TransactionResponse(
                     transaction.getTransactionId(),
                     transaction.getCategoryId(),
                     transaction.getAccountId(), 
@@ -119,11 +95,7 @@ public class TransactionController {
                     transaction.getDate(), 
                     transaction.getDescription(), 
                     transaction.getTransactionType()
-                )
-            );
-        } // for each
-        return ResponseEntity.status(HttpStatus.OK).body(responses);
-    } // getAllTransactions
-
+                );
+    } // mapToReponse
 
 } // TransactionController

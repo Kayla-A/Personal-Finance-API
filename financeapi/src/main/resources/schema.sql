@@ -1,9 +1,9 @@
 -- Drop tables 
-DROP TABLE IF EXISTS Users;
-DROP TABLE IF EXISTS Accounts;
-DROP TABLE IF EXISTS Categories;
 DROP TABLE IF EXISTS Transactions;
 DROP TABLE IF EXISTS Budgets;
+DROP TABLE IF EXISTS Accounts;
+DROP TABLE IF EXISTS Categories;
+DROP TABLE IF EXISTS Users;
 
 -- Create the Users table
 CREATE TABLE IF NOT EXISTS Users(
