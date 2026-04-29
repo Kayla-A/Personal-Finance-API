@@ -7,9 +7,7 @@ public class AddCategoryRequest {
     @NotBlank
     private String name;
 
-    public AddCategoryRequest(String name) {
-        this.name = name;
-    } // AddCategoryRequest
+    public AddCategoryRequest() {} // AddCategoryRequest
 
     public String getName() { return name; } // getName
 
