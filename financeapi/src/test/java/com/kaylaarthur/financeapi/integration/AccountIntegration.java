@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import com.jayway.jsonpath.JsonPath;
 
-import javax.sql.DataSource;;
+import javax.sql.DataSource;
 
 @SpringBootTest
 @AutoConfigureMockMvc

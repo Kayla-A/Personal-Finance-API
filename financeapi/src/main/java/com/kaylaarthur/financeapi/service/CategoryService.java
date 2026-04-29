@@ -33,12 +33,12 @@ public class CategoryService {
     } // updateCategory
 
     public void deleteCategory(long categoryId, long userId) {
-        catergoryRepo.findByCategoryIdAndUserId(categoryId, userId);
+        catergoryRepo.findByCategoryIdAndUserId(categoryId, userId).orElseThrow(() -> new IllegalArgumentException("Category not found"));
         catergoryRepo.delete(categoryId, userId);
     } // deleteCategory
 
     public Category getCategory(long categoryId, long userId) {
-        return catergoryRepo.findByCategoryIdAndUserId(categoryId, userId).orElseThrow(() -> new RuntimeException("Account not found"));
+        return catergoryRepo.findByCategoryIdAndUserId(categoryId, userId).orElseThrow(() -> new RuntimeException("Category not found"));
     } // getCategory
 
     public List<Category> getAllCategories(long userId) {

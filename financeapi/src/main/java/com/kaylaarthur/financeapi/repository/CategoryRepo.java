@@ -26,7 +26,7 @@ public class CategoryRepo {
     } // CategoryRepo
 
     public Category save(Category category) {
-        String sql = "INSERT INTO Categories (user_id, name) VALUES (?, ?)";
+        String sql = "INSERT INTO Categories (user_id, category_name) VALUES (?, ?)";
 
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -51,7 +51,7 @@ public class CategoryRepo {
     } // save
 
     public Category update(Category category) {
-        String sql = "UPDATE Categories SET name = ? WHERE category_id = ? AND userID = ?";
+        String sql = "UPDATE Categories SET category_name = ? WHERE category_id = ? AND user_id = ?";
         
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -157,7 +157,7 @@ public class CategoryRepo {
         return new Category(
                         rs.getLong("category_id"),
                         rs.getLong("user_id"),
-                        rs.getString("name")
+                        rs.getString("category_name")
                     );
     } // mapRowToCategory
 
