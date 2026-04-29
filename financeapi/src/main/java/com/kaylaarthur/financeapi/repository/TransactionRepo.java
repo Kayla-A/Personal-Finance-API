@@ -99,7 +99,7 @@ public class TransactionRepo {
         String sql = """
             SELECT t.* 
             FROM Transactions t 
-            JOIN accounts a 
+            JOIN Accounts a 
             ON t.account_id = a.account_id
             Where a.user_id = ? 
                 AND t.transaction_id = ?
@@ -130,11 +130,11 @@ public class TransactionRepo {
                 JOIN Accounts a
                 ON t.account_id = a.account_id
                 WHERE a.user_id = ?
-                ORDER BY t.date DESC
         """);
         
         List<Object> params = new ArrayList<>();
         params.add(userId);
+        
         if(accountId != null) {
             sql.append(" AND t.account_id = ?");
             params.add(accountId);
@@ -146,19 +146,21 @@ public class TransactionRepo {
         } // if
 
         if(type != null) {
-            sql.append(" AND t.transaction_type_id = ?");
+            sql.append(" AND t.transaction_type = ?");
             params.add(type.name());
         } // if
 
         if(startDate != null) {
-            sql.append(" AND t.date_id >= ?");
+            sql.append(" AND t.date >= ?");
             params.add(Date.valueOf(startDate));
         } // if
 
         if(endDate != null) {
-            sql.append(" AND t.date_id <= ?");
+            sql.append(" AND t.date<= ?");
             params.add(Date.valueOf(endDate));
         } // if
+
+        sql.append(" ORDER BY t.date DESC");
 
         List<Transaction> transactions = new ArrayList<>();
 
@@ -213,7 +215,7 @@ public class TransactionRepo {
                         rs.getLong("transaction_id"),
                         rs.getLong("category_id"),
                         rs.getLong("account_id"),
-                        rs.getBigDecimal("ammount"),
+                        rs.getBigDecimal("amount"),
                         rs.getDate("date").toLocalDate(),
                         rs.getString("description"),
                         TransactionType.valueOf(rs.getString("transaction_type"))

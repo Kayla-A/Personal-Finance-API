@@ -33,15 +33,15 @@ public class TransactionService {
     @Transactional
     public Transaction addTransaction(long userId, AddTransactionRequest request) {
         // check account exist & belongs to user 
-        Account account = accountRepo.findByUserIdAndAccountId(userId, request.getAccountId()).orElseThrow(() -> new RuntimeException("Account for transaction not found"));
+        Account account = accountRepo.findByUserIdAndAccountId(userId, request.getAccountId()).orElseThrow(() -> new IllegalArgumentException("Account for transaction not found"));
         // check category exists
-        categoryRepo.findByCategoryIdAndUserId(request.getCategoryId(), userId).orElseThrow(() -> new RuntimeException("Category for transaction not found"));
+        categoryRepo.findByCategoryIdAndUserId(request.getCategoryId(), userId).orElseThrow(() -> new IllegalArgumentException("Category for transaction not found"));
 
         // update account balance
         if(request.getTransactionType() == TransactionType.EXPENSE) {
             // check for negative balance 
             if(account.getBalance().compareTo(request.getAmount()) == -1) {
-                throw new RuntimeException("Expence results in a negative balance");
+                throw new IllegalArgumentException("Expence results in a negative balance");
             } // if
             account.setBalance(account.getBalance().subtract(request.getAmount()));
         } else {
@@ -77,22 +77,29 @@ public class TransactionService {
         } // if
 
         BigDecimal newAmount = request.getAmount() != null ? request.getAmount() : transaction.getAmount();
+        BigDecimal newBalance = account.getBalance();
         TransactionType newType = request.getTransactionType() != null ? request.getTransactionType() : transaction.getTransactionType();
-        
+
         // undo old values
         if(transaction.getTransactionType() == TransactionType.EXPENSE) {
-            account.setBalance(account.getBalance().add(transaction.getAmount()));
+            newBalance = newBalance.add(transaction.getAmount());
         } else {
-            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+            newBalance = newBalance.subtract(transaction.getAmount());
         } // if
 
         // apply new values
         if(newType == TransactionType.EXPENSE) {
-            account.setBalance(account.getBalance().subtract(newAmount));
+            newBalance = newBalance.subtract(newAmount);
         } else {
-            account.setBalance(account.getBalance().add(newAmount));
+            newBalance = newBalance.add(newAmount);
         } // if 
 
+        // check if account balance becomes negative
+        if(newBalance.compareTo(BigDecimal.ZERO) == -1) {
+            throw new IllegalArgumentException("Transaction results in negative balance");
+        } // if
+
+        account.setBalance(newBalance);
         accountRepo.update(account); // update in database
 
         if(request.getAmount() != null) { transaction.setAmount(request.getAmount()); } // if
@@ -126,9 +133,10 @@ public class TransactionService {
 
     public Transaction getTransaction(long userId, long transactionId) {
         return transactionRepo.findByUserIdAndTransactionId(userId, transactionId).orElseThrow(() -> new RuntimeException("Couldn't get transaction for user"));
+        
     } // getTransaction
 
-    public List<Transaction> getAllTransactions(long userId, long accountId, long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
+    public List<Transaction> getAllTransactions(long userId, Long accountId, Long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
         return transactionRepo.findAllTransactions(userId, accountId, categoryId, type, startDate, endDate);
     } // getAllTransactions
     
