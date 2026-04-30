@@ -14,6 +14,7 @@ public class AddBudgetRequest {
     @NotNull
     @DecimalMin("0.01")
     private BigDecimal budgetLimit;
+    @NotNull
     private BudgetInterval period;
    
     public AddBudgetRequest() {} // AddBudgetRequest

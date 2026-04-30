@@ -9,6 +9,8 @@ import com.kaylaarthur.financeapi.model.Budget;
 import com.kaylaarthur.financeapi.service.BudgetService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,7 +51,7 @@ public class BudgetController {
     } // addBudget
     
     @PutMapping("/{id}")
-    public ResponseEntity<BudgetResponse> updateBudget(@PathVariable long id, @RequestBody UpdateBudgetRequest request) {
+    public ResponseEntity<BudgetResponse> updateBudget(@PathVariable long id, @Valid @RequestBody UpdateBudgetRequest request) {
         User user = securityUtility.getCurrentUser();
         Budget budget = budgetService.updateBudget(user.getId(), id, request);
         return ResponseEntity.status(HttpStatus.OK).body(mapToResponse(budget));

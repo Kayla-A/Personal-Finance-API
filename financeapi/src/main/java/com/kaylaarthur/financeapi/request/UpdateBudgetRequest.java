@@ -8,7 +8,7 @@ import jakarta.validation.constraints.DecimalMin;
 
 public class UpdateBudgetRequest {
     
-    private long categoryId;
+    private Long categoryId;
     @DecimalMin("0.01")
     private BigDecimal budgetLimit;
     private BudgetInterval period;

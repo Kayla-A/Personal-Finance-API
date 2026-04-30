@@ -28,7 +28,7 @@ import javax.sql.DataSource;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class AccountIntegration {
+public class AccountIntegrationTest {
     
     @Autowired
     private MockMvc mockMvc;
@@ -269,4 +269,4 @@ public class AccountIntegration {
     } // shouldRejectRequestWithoutToken
 
 
-} // AccountIntegration
+} // AccountIntegrationTest
