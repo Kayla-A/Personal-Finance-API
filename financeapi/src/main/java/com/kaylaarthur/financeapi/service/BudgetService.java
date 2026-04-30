@@ -50,13 +50,15 @@ public class BudgetService {
         Long newCategoryId = request.getCategoryId() != null ? request.getCategoryId() : budget.getCategoryId();
         BudgetInterval newPeriod = request.getPeriod() != null ? request.getPeriod() : budget.getPeriod();
 
-        budgetRepo.findByUserIdAndCategoryIdAndPeriod(userId, newCategoryId, newPeriod)
-            .ifPresent(existingBudget -> {
-                if(existingBudget.getBudgetId() != budgetId) {
-                    throw new IllegalArgumentException("Budget not unique by category and period");
-                } // if
-            });
-
+        if(request.getCategoryId() != null || request.getPeriod() != null) {
+            budgetRepo.findByUserIdAndCategoryIdAndPeriod(userId, newCategoryId, newPeriod)
+                .ifPresent(existingBudget -> {
+                    if(existingBudget.getBudgetId() != budgetId) {
+                        throw new IllegalArgumentException("Budget not unique by category and period");
+                    } // if
+                });
+        } // if
+        
         if(request.getCategoryId() != null) { budget.setCategoryId(request.getCategoryId()); } // if
         if(request.getBudgetLimit() != null) { budget.setBudgetLimit(request.getBudgetLimit()); } // if
         if(request.getPeriod() != null) { budget.setPeriod(request.getPeriod()); } // if
