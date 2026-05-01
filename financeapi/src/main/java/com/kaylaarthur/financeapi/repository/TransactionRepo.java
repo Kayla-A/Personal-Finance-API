@@ -1,8 +1,10 @@
 package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
+import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -208,8 +210,6 @@ public class TransactionRepo {
     } // findTransactionsByUserId
 
 
-
-
     private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
         return new Transaction(
                         rs.getLong("transaction_id"),
@@ -222,4 +222,54 @@ public class TransactionRepo {
                     );
     } // mapRowToTransaction
     
+
+    private LocalDate getStartDate(BudgetInterval period) {
+        LocalDate now = LocalDate.now();
+
+        return switch(period) {
+            case MONTHLY -> now.withDayOfMonth(1);
+            case YEARLY -> now.withDayOfYear(1);
+        };
+    } // getStartDate
+
+    private LocalDate getEndDate(BudgetInterval period) {
+        LocalDate now = LocalDate.now();
+
+        return switch(period) {
+            case MONTHLY -> now.withDayOfMonth(now.lengthOfMonth());
+            case YEARLY -> now.withDayOfYear(now.lengthOfYear());
+        };
+    } // getEndDate
+
+    public BigDecimal sumExpensesByCategoryAndPeriod(long userId, long categoryId, BudgetInterval period) {
+        String sql = """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transactions t
+            JOIN Accounts a
+            ON t.account_id = a.account_id
+            WHERE a.user_id = ?
+                AND t.category_id = ?
+                AND t.transaction_type = 'EXPENSE'
+        """;
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setLong(1, userId);
+            stmt.setLong(2, categoryId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) { 
+                    BigDecimal result = rs.getBigDecimal(1); 
+                    return result != null ? result : BigDecimal.ZERO;
+                }
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error calculating spending by category and period", e);
+        } // try
+
+        return BigDecimal.ZERO;
+    } // sumExpensesByCategoryAndPeriod
 } // TransactionRepo
