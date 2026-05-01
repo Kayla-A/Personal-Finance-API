@@ -223,24 +223,6 @@ public class TransactionRepo {
     } // mapRowToTransaction
     
 
-    private LocalDate getStartDate(BudgetInterval period) {
-        LocalDate now = LocalDate.now();
-
-        return switch(period) {
-            case MONTHLY -> now.withDayOfMonth(1);
-            case YEARLY -> now.withDayOfYear(1);
-        };
-    } // getStartDate
-
-    private LocalDate getEndDate(BudgetInterval period) {
-        LocalDate now = LocalDate.now();
-
-        return switch(period) {
-            case MONTHLY -> now.withDayOfMonth(now.lengthOfMonth());
-            case YEARLY -> now.withDayOfYear(now.lengthOfYear());
-        };
-    } // getEndDate
-
     public BigDecimal sumExpensesByCategoryAndPeriod(long userId, long categoryId, BudgetInterval period) {
         String sql = """
             SELECT COALESCE(SUM(t.amount), 0)
