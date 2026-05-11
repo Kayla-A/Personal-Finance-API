@@ -1,6 +1,7 @@
 package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
+import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
@@ -11,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.sql.Date;
 import java.util.Optional;
 import java.util.ArrayList;
@@ -254,4 +256,74 @@ public class TransactionRepo {
 
         return BigDecimal.ZERO;
     } // sumExpensesByCategoryAndPeriod
+
+    public List<MonthlySummaryResponse> monthlySummary(long userId, YearMonth startDate, YearMonth endDate) {
+        String sql = """
+            SELECT 
+                YEAR(t.date) as trans_year,
+                MONTH(t.date) as trans_month,
+                sum(
+                    CASE
+                        WHEN t.transaction_type = 'EXPENSE'
+                        THEN t.amount
+                        ELSE 0
+                    END
+                ) as total_expense,
+                sum(
+                    CASE
+                        WHEN t.transaction_type = 'INCOME'
+                        THEN t.amount
+                        ELSE 0
+                    END
+                ) as total_income,
+                (
+                    SELECT c.category_name
+                    FROM Transactions t2
+                    JOIN Categories c
+                        ON t2.category_id = c.category_id
+                    JOIN Accounts a2
+                        ON t2.account_id = a2.account_id
+                    WHERE a2.user_id = a.user_id
+                        AND YEAR(t2.date) = YEAR(t.date)
+                        AND MONTH(t2.date) = MONTH(t.date)
+                    GROUP BY c.category_id, c.category_name
+                    ORDER BY count(*) desc LIMIT 1
+                ) as most_frequent_category
+            From Transactions t
+            JOIN Accounts a
+                ON a.account_id = t.account_id
+            WHERE a.user_id = ?
+                AND t.date >= ?
+                AND t.date <= ?
+            GROUP BY YEAR(t.date), MONTH(t.date)
+            ORDER BY  YEAR(t.date), MONTH(t.date) desc
+        """;
+        List<MonthlySummaryResponse> summary = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setDate(2, Date.valueOf(startDate.atDay(1)));
+            stmt.setDate(3, Date.valueOf(endDate.atEndOfMonth()));
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    summary.add(new MonthlySummaryResponse(
+                        rs.getInt("trans_year"), 
+                        rs.getInt("trans_month"),
+                        rs.getBigDecimal("total_expense"),
+                        rs.getBigDecimal("total_income"),
+                        rs.getString("most_frequent_category")));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error getting monthly summary", e);
+        } // try-catch
+
+        return summary;
+    } // monthlySummary
+
 } // TransactionRepo

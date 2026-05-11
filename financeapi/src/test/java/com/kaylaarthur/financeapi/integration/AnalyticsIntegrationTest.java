@@ -170,5 +170,67 @@ public class AnalyticsIntegrationTest {
             .andExpect(jsonPath("$.limit").value(500.00))
             .andExpect(jsonPath("$.spent").value(150.00))
             .andExpect(jsonPath("$.remaining").value(350.00));
-    } // 
+    } // shouldCalculateBudgetUsage
+
+    // will fail since H@ is stricter than MySQL, will test in an actual MySQL database instead 
+    @Test 
+    void shouldGetMonthlySummary() throws Exception {
+        long checkingId = makeAccount("Checking", "CHECKINGS", 2000);
+    
+        long foodId = makeCategory("Food");
+        long salaryId = makeCategory("Salary");
+
+        // January
+        makeTransaction(foodId, checkingId, 100, "EXPENSE");
+        makeTransaction(foodId, checkingId, 50, "EXPENSE");
+        makeTransaction(salaryId, checkingId, 1000, "INCOME");
+
+        // February
+        mockMvc.perform(post("/transactions")
+            .header("Authorization", token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                    "categoryId": "%d",
+                    "accountId": "%d",
+                    "amount": 200.00,
+                    "date": "2026-02-10",
+                    "description": "Groceries",
+                    "transactionType": "EXPENSE"
+                }
+            """.formatted(foodId, checkingId)))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/transactions")
+            .header("Authorization", token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                    "categoryId": "%d",
+                    "accountId": "%d",
+                    "amount": 1500.00,
+                    "date": "2026-02-15",
+                    "description": "Paycheck",
+                    "transactionType": "INCOME"
+                }
+            """.formatted(salaryId, checkingId)))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/analytics/monthly-summary")
+            .header("Authorization", token)
+            .param("startDate", "2026-01")
+            .param("endDate", "2026-02"))
+            .andExpect(status().isOk())
+
+            // two months returned
+            .andExpect(jsonPath("$.length()").value(2))
+
+            // January checks
+            .andExpect(jsonPath("$[0].totalExpense").value(150.00))
+            .andExpect(jsonPath("$[0].totalIncome").value(1000.00))
+
+            // February checks
+            .andExpect(jsonPath("$[1].totalExpense").value(200.00))
+            .andExpect(jsonPath("$[1].totalIncome").value(1500.00));
+    } // shouldGetMonthlySummary
 } // AnalyticsIntegrationTest
