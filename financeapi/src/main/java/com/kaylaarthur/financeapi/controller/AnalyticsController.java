@@ -3,6 +3,7 @@ package com.kaylaarthur.financeapi.controller;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.User;
 import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
+import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.service.AnalyticsService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
@@ -14,8 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.YearMonth;
+import java.math.BigDecimal;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
 
 import java.util.List;
 
@@ -39,7 +42,11 @@ public class AnalyticsController {
         @RequestParam BudgetInterval period
     ) {
         User user = securityUtility.getCurrentUser();
-        BudgetUsageResponse response = analyticsService.getBudgetUsage(user.getId(), categoryId, period);
+        BudgetUsageResponse response = analyticsService.getBudgetUsage(
+            user.getId(), 
+            categoryId, 
+            period
+        );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     } // getBudgetUsage // categoryId and period
     
@@ -50,11 +57,32 @@ public class AnalyticsController {
         @RequestParam YearMonth endDate
     ) {
         User user = securityUtility.getCurrentUser();
-        List<MonthlySummaryResponse> responses = analyticsService.getMonthlySummary(user.getId(), startDate, endDate);
+        List<MonthlySummaryResponse> responses = analyticsService.getMonthlySummary(
+            user.getId(), 
+            startDate, 
+            endDate
+        );
         return ResponseEntity.status(HttpStatus.OK).body(responses);
     } // getMonthlySummary
-    /*  
-    public getSpendingByCategory() // date range
+     
+    @GetMapping("/category-spending")
+    public ResponseEntity<List<CategorySpendingResponse>> getSpendingByCategory(
+        @RequestParam LocalDate startDate,
+        @RequestParam LocalDate endDate,
+        @RequestParam (required = false) Long accountId,
+        @RequestParam (required = false) BigDecimal minAmount
+    ) {
+        User user = securityUtility.getCurrentUser();
+        List<CategorySpendingResponse> responses = analyticsService.getSpendingByCategory(
+            user.getId(), 
+            startDate, 
+            endDate,
+            accountId,
+            minAmount
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(responses);
+    } // getSpendingByCategory
+    /* 
     public getBudgetOverrun() 
     public getBurnRate() // category
     public getSpendingTrend() {} // by category

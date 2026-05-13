@@ -1,6 +1,7 @@
 package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
+import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
@@ -319,11 +320,105 @@ public class TransactionRepo {
             } // try
 
         } catch(SQLException e) {
-            e.printStackTrace();
             throw new RuntimeException("Error getting monthly summary", e);
         } // try-catch
 
         return summary;
     } // monthlySummary
+
+    public List<CategorySpendingResponse> spendingByCategory(
+        long userId, 
+        LocalDate startDate, 
+        LocalDate endDate,
+        Long accountId,
+        BigDecimal minAmount
+    ) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                c.category_name as category_name,
+                SUM(t.amount) as total_spent,
+                ROUND(
+                    SUM(t.amount) / 
+                    (   
+                        SELECT SUM(t.amount) 
+                        FROM Transactions t, Categories c 
+                        WHERE c.user_id = ? 
+        """);
+        
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if(accountId != null) {
+            sql.append(" AND t.account_id = ?");
+            params.add(accountId);
+        } // if
+
+        if(minAmount != null) {
+            sql.append(" AND t.amount >= ?");
+            params.add(minAmount);
+        } // if
+
+        sql.append("""
+                            AND c.category_id = t.category_id
+                            AND t.date BETWEEN ? AND ?
+                            AND t.transaction_type = 'EXPENSE'
+                    ) * 100, 2) as percent_of_spendings,
+                ROUND(SUM(t.amount)/COUNT(t.transaction_id), 2) as average_trans_size
+            FROM Transactions t
+            JOIN Categories c
+            ON t.category_id = c.category_id
+            WHERE c.user_id = ?
+                AND t.date BETWEEN ? AND ? 
+                AND t.transaction_type = 'EXPENSE' 
+        """);
+        
+        params.add(startDate);
+        params.add(endDate);
+        params.add(userId);
+        params.add(startDate);
+        params.add(endDate);
+
+        if(accountId != null) {
+            sql.append(" AND t.account_id = ?");
+            params.add(accountId);
+        } // if
+
+        if(minAmount != null) {
+            sql.append(" AND t.amount >= ?");
+            params.add(minAmount);
+        } // if
+
+        sql.append("""
+             GROUP BY c.category_name
+            ORDER BY total_spents
+        """);
+
+        List<CategorySpendingResponse> responses = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            
+            for(int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            } // for
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    responses.add(new CategorySpendingResponse(
+                        rs.getString("category_name"), 
+                        rs.getBigDecimal("total_spent"),
+                        rs.getDouble("percent_of_spendings"),
+                        rs.getBigDecimal("average_trans_size")));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error getting spending by category", e);
+        } // try-catch
+
+        return responses;
+    } // spendingByCategory
 
 } // TransactionRepo
