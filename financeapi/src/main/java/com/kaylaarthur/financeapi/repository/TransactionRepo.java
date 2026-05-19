@@ -1,20 +1,25 @@
 package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
+import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
 import java.math.BigDecimal;
+
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.sql.Date;
+import java.time.temporal.TemporalAdjusters;
+
 import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
@@ -409,16 +414,71 @@ public class TransactionRepo {
                         rs.getBigDecimal("total_spent"),
                         rs.getDouble("percent_of_spendings"),
                         rs.getBigDecimal("average_trans_size")));
-                } // if
+                } // while
                 
             } // try
 
         } catch(SQLException e) {
-            e.printStackTrace();
             throw new RuntimeException("Error getting spending by category", e);
         } // try-catch
 
         return responses;
     } // spendingByCategory
+
+    public List<BudgetOverrunResponse> budgetOverrun(long userId) {
+        List<BudgetOverrunResponse> responses = new ArrayList<>();
+
+        String sql = """
+            SELECT 
+                c.category_name as category_name,
+                b.budget_limit as budget_limit,
+                sum(t.amount) as actual_spent,
+                b.period as period
+            FROM Transactions t
+            JOIN Categories c
+            ON t.category_id = c.category_id
+            JOIN Budgets b
+            ON c.category_id = b.category_id
+            WHERE c.user_id = ?
+                AND b.user_id = ?
+                AND t.date <= ?
+                AND t.transaction_type = 'EXPENSE'
+                AND t.date >= CASE  
+                    WHEN b.period = 'MONTHLY' THEN ?
+                    WHEN b.period = 'YEARLY' THEN ?
+                END
+            GROUP BY b.budget_id, c.category_name, b.budget_limit, b.period
+            HAVING sum(t.amount) > b.budget_limit
+            ORDER BY actual_spent desc
+        """;
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, userId);
+            stmt.setLong(2, userId);
+            stmt.setDate(3, Date.valueOf(LocalDate.now()));
+            stmt.setDate(4, Date.valueOf(LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())));
+            stmt.setDate(5, Date.valueOf(LocalDate.now().with(TemporalAdjusters.firstDayOfYear())));
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    responses.add(new BudgetOverrunResponse(
+                        rs.getString("category_name"), 
+                        rs.getBigDecimal("budget_limit"),
+                        rs.getBigDecimal("actual_spent"),
+                        BudgetInterval.valueOf(rs.getString("period"))
+                    ));
+                } // while
+                
+            } // try
+
+        } catch(SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error getting budget overrun by category", e);
+        } // try-catch
+
+        return responses;
+    } // budgetOverrun
 
 } // TransactionRepo

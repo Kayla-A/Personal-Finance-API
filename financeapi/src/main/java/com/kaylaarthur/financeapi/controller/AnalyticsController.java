@@ -2,6 +2,7 @@ package com.kaylaarthur.financeapi.controller;
 
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.User;
+import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
@@ -82,8 +83,15 @@ public class AnalyticsController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(responses);
     } // getSpendingByCategory
-    /* 
-    public getBudgetOverrun() 
+
+    @GetMapping("/budget-overrun")
+    public ResponseEntity<List<BudgetOverrunResponse>> getBudgetOverrun() {
+        User user = securityUtility.getCurrentUser();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(analyticsService.getBudgetOverrun(user.getId()));
+    } // getBudgetOverrun
+    
+    /*
     public getBurnRate() // category
     public getSpendingTrend() {} // by category
     public getCategoryDistribution() {}

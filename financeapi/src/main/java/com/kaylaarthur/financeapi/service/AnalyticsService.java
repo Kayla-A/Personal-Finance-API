@@ -4,6 +4,7 @@ import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.Budget;
 import com.kaylaarthur.financeapi.repository.BudgetRepo;
 import com.kaylaarthur.financeapi.repository.TransactionRepo;
+import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
@@ -78,5 +79,9 @@ public class AnalyticsService {
             minAmount
         );
     } // getSpendingByCategory
+
+    public List<BudgetOverrunResponse> getBudgetOverrun(long userId) {
+        return transactionRepo.budgetOverrun(userId);
+    } // getBudgetOverrun
     
 } // AnalyticsService

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.time.LocalDate;
 
 import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,32 @@ public class AnalyticsIntegrationTest {
         return ((Number) JsonPath.read(response, "$.transactionId")).longValue();
     } // makeTransaction
 
+    private long makeTransaction(
+        long categoryId, 
+        long accountId, 
+        double amount,
+        LocalDate date,
+        String type) throws Exception {
+        
+        String response = mockMvc.perform(post("/transactions")
+        .header("Authorization", token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+            { 
+                "categoryId": %d,
+                "accountId": %d ,
+                "amount": %f,
+                "date": "%s",
+                "description": "TESTING TESTING",
+                "transactionType": "%s"
+            }
+        """.formatted(categoryId, accountId, amount, date.toString(), type)))
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+        return ((Number) JsonPath.read(response, "$.transactionId")).longValue();
+    } // makeTransaction
 
     private long makeBudget(long categoryId, double limit, String period) throws Exception {
         String response = mockMvc.perform(post("/budgets")
@@ -268,6 +295,42 @@ public class AnalyticsIntegrationTest {
             .andExpect(jsonPath("$[1].categoryName").value("Rent"))
             .andExpect(jsonPath("$[1].totalSpent").value(1000.00))
             .andExpect(jsonPath("$[1].averageTransactionSize").value(1000.00));
-} // shouldGetSpendingByCategory
+    } // shouldGetSpendingByCategory
+
+    @Test
+    void shouldGetBudgetOverruns() throws Exception {
+        long accountId = makeAccount("Checking", "CHECKINGS", 5000);
+
+        long foodId = makeCategory("Food");
+        long rentId = makeCategory("Rent");
+
+        // Food budget = 200
+        makeBudget(foodId, 200, "MONTHLY");
+
+        // Rent budget = 1500
+        makeBudget(rentId, 1500, "MONTHLY");
+
+        // Food spending = 300 (OVER budget)
+        makeTransaction(foodId, accountId, 100, LocalDate.now(), "EXPENSE");
+        makeTransaction(foodId, accountId, 200, LocalDate.now(), "EXPENSE");
+
+        // Rent spending = 1000 (UNDER budget)
+        makeTransaction(rentId, accountId, 1000, LocalDate.now(), "EXPENSE");
+
+        mockMvc.perform(get("/analytics/budget-overrun")
+            .header("Authorization", token))
+            .andExpect(status().isOk())
+
+            // only Food should appear
+            .andExpect(jsonPath("$.length()").value(1))
+
+            .andExpect(jsonPath("$[0].categoryName").value("Food"))
+            .andExpect(jsonPath("$[0].budgetLimit").value(200.00))
+            .andExpect(jsonPath("$[0].actualSpent").value(300.00))
+
+            .andExpect(jsonPath("$[0].percentOverBudget").value(50.00))
+
+            .andExpect(jsonPath("$[0].period").value("MONTHLY"));
+    } // shouldGetBudgetOverruns
 
 } // AnalyticsIntegrationTest
