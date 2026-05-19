@@ -390,7 +390,7 @@ public class TransactionRepo {
 
         sql.append("""
              GROUP BY c.category_name
-            ORDER BY total_spents
+            ORDER BY total_spent
         """);
 
         List<CategorySpendingResponse> responses = new ArrayList<>();

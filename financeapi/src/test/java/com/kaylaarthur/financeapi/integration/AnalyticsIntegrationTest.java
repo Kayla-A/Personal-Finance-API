@@ -233,4 +233,41 @@ public class AnalyticsIntegrationTest {
             .andExpect(jsonPath("$[1].totalExpense").value(200.00))
             .andExpect(jsonPath("$[1].totalIncome").value(1500.00));
     } // shouldGetMonthlySummary
+
+    @Test
+    void shouldGetSpendingByCategory() throws Exception {
+        long checkingId = makeAccount("Checking", "CHECKINGS", 2000);
+
+        long foodId = makeCategory("Food");
+        long rentId = makeCategory("Rent");
+
+        // Food total = 150
+        makeTransaction(foodId, checkingId, 100, "EXPENSE");
+        makeTransaction(foodId, checkingId, 50, "EXPENSE");
+
+        // Rent total = 1000
+        makeTransaction(rentId, checkingId, 1000, "EXPENSE");
+
+        // Income should NOT count toward spending
+        makeTransaction(foodId, checkingId, 5000, "INCOME");
+
+        mockMvc.perform(get("/analytics/category-spending")
+            .header("Authorization", token)
+            .param("startDate", "2026-01-01")
+            .param("endDate", "2026-12-31"))
+            .andExpect(status().isOk())
+
+            // two categories returned
+            .andExpect(jsonPath("$.length()").value(2))
+
+            // Food 
+            .andExpect(jsonPath("$[0].categoryName").value("Food"))
+            .andExpect(jsonPath("$[0].totalSpent").value(150.00))
+            .andExpect(jsonPath("$[0].averageTransactionSize").value(75.00))
+            // Rent
+            .andExpect(jsonPath("$[1].categoryName").value("Rent"))
+            .andExpect(jsonPath("$[1].totalSpent").value(1000.00))
+            .andExpect(jsonPath("$[1].averageTransactionSize").value(1000.00));
+} // shouldGetSpendingByCategory
+
 } // AnalyticsIntegrationTest
