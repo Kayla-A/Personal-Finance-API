@@ -4,6 +4,7 @@ import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.User;
 import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
+import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.service.AnalyticsService;
@@ -91,8 +92,25 @@ public class AnalyticsController {
                 .body(analyticsService.getBudgetOverrun(user.getId()));
     } // getBudgetOverrun
     
+    @GetMapping("/burn-rate")
+    public ResponseEntity<BurnRateResponse> getBurnRate(
+        @RequestParam(required = false) Long accountId,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam LocalDate startDate,
+        @RequestParam LocalDate endDate
+    ) {
+        User user = securityUtility.getCurrentUser();
+        return ResponseEntity.status(HttpStatus.OK).body(
+            analyticsService.getBurnRate(
+                user.getId(), 
+                accountId, 
+                categoryId, 
+                startDate, 
+                endDate
+            ));
+    } // getBurnRate
+    
     /*
-    public getBurnRate() // category
     public getSpendingTrend() {} // by category
     public getCategoryDistribution() {}
     public getRecurringTransactions() {}

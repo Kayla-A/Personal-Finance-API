@@ -2,10 +2,13 @@ package com.kaylaarthur.financeapi.service;
 
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.model.Budget;
+import com.kaylaarthur.financeapi.repository.AccountRepo;
 import com.kaylaarthur.financeapi.repository.BudgetRepo;
+import com.kaylaarthur.financeapi.repository.CategoryRepo;
 import com.kaylaarthur.financeapi.repository.TransactionRepo;
 import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
+import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 
@@ -23,10 +26,16 @@ public class AnalyticsService {
     private BudgetRepo budgetRepo;
 
     private TransactionRepo transactionRepo;
+    private AccountRepo accountRepo;
+    private CategoryRepo categoryRepo;
 
-    public AnalyticsService(BudgetRepo budgetRepo, TransactionRepo transactionRepo) {
+    public AnalyticsService(BudgetRepo budgetRepo, TransactionRepo transactionRepo,
+        AccountRepo accountRepo, CategoryRepo categoryRepo
+    ) {
         this.budgetRepo = budgetRepo;
         this.transactionRepo = transactionRepo;
+        this.accountRepo = accountRepo;
+        this.categoryRepo = categoryRepo;
     } // AnalyticsService
 
     public BudgetUsageResponse getBudgetUsage(long userId, long categoryId, BudgetInterval period) {
@@ -83,5 +92,38 @@ public class AnalyticsService {
     public List<BudgetOverrunResponse> getBudgetOverrun(long userId) {
         return transactionRepo.budgetOverrun(userId);
     } // getBudgetOverrun
+
+    public BurnRateResponse getBurnRate(
+        long userId, 
+        Long accountId, 
+        Long categoryId, 
+        LocalDate startDate, 
+        LocalDate endDate
+    ) {
+        if(accountId != null) {
+            // check account belongs to user 
+            accountRepo.findByUserIdAndAccountId(userId, accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account for transaction not found"));
+        } // if
+
+        if(categoryId != null) {
+            // check category belongs to user
+            categoryRepo.findByCategoryIdAndUserId(categoryId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Category for transaction not found"));
+        } // if
+        
+        // check valid date range 
+        if(!startDate.isBefore(endDate)) {
+            throw new IllegalArgumentException("Invalid date range");
+        } // if
+
+        return transactionRepo.burnRate(
+            userId, 
+            accountId, 
+            categoryId, 
+            startDate, 
+            endDate
+        );
+    } // getBurnRate
     
 } // AnalyticsService
