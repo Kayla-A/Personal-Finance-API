@@ -15,9 +15,10 @@ import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
-
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -117,13 +118,36 @@ public class AnalyticsService {
             throw new IllegalArgumentException("Invalid date range");
         } // if
 
-        return transactionRepo.burnRate(
+        BigDecimal totalSpent = transactionRepo.totalSpent(
             userId, 
             accountId, 
             categoryId, 
             startDate, 
             endDate
         );
+
+        BigDecimal balance = accountRepo.getTotalAccountBalance(userId, accountId);
+        
+        long days = Math.max(1, ChronoUnit.DAYS.between(startDate, endDate));
+        
+        BigDecimal dailyBurn = 
+            totalSpent.divide(BigDecimal.valueOf(days),
+            2,
+            RoundingMode.HALF_UP
+        );
+
+        int daysUntilDeplete =
+            dailyBurn.compareTo(BigDecimal.ZERO) <= 0
+            ? -1
+            : balance.divide(dailyBurn, 0, RoundingMode.DOWN).intValue();
+
+        return new BurnRateResponse(
+            totalSpent,
+            dailyBurn, 
+            dailyBurn.multiply(BigDecimal.valueOf(7)), 
+            dailyBurn.multiply(BigDecimal.valueOf(30)),
+            daysUntilDeplete
+        ); 
     } // getBurnRate
     
 } // AnalyticsService

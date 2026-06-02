@@ -3,6 +3,7 @@ package com.kaylaarthur.financeapi.repository;
 import com.kaylaarthur.financeapi.model.Account;
 import com.kaylaarthur.financeapi.enums.Type;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -158,7 +159,34 @@ public class AccountRepo {
         return Optional.empty();
     } // findByUserIdAndAccountId
     
+    public BigDecimal getTotalAccountBalance(long userId, Long accountId) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT COALESCE(sum(balance), 0) as total_balance
+            FROM Accounts
+            WHERE user_id = ?
+        """);
+        
+        if(accountId != null) {
+            sql.append(" AND account_id = ?");
+        } // if
 
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            stmt.setLong(1, userId);
+            if(accountId != null) stmt.setLong(2, accountId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return rs.getBigDecimal("total_balance");
+                } // if
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error getting total account balance", e);
+        } // try-catch
+
+        return BigDecimal.ZERO;
+    } // getTotalAccountBalance
 
 
 

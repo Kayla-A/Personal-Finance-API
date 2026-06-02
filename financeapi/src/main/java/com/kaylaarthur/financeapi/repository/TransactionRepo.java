@@ -2,7 +2,6 @@ package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
-import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
@@ -482,25 +481,19 @@ public class TransactionRepo {
         return responses;
     } // budgetOverrun
 
-    public BurnRateResponse burnRate(
+    public BigDecimal totalSpent(
             long userId, 
             Long accountId, 
             Long categoryId, 
             LocalDate startDate, 
             LocalDate endDate
         ) {
-            BurnRateResponse response = null;
-
             StringBuilder sql = new StringBuilder("""
                 SELECT 
-                    sum(t.amount) as total_spent,
-                    sum(t.amount) / DATEDIFF(?, ?) as average_daily_burn,
-                    sum(t.amount) / TIMESTAMPDIFF(WEEK, ?, ?) as average_weekly_burn,
-                    sum(t.amount) / DATEDIFF(MONTH, ?, ?) as average_monthly_burn,
-                     as days_until_deplete
+                    COALESCE(sum(t.amount), 0) as total_spent
                 FROM Transactions t
                 JOIN Accounts a
-                    ON t.account_id = t.account_id
+                    ON t.account_id = a.account_id
                 JOIN Categories c
                     ON t.category_id = c.category_id
                 WHERE t.date BETWEEN ? AND ?
@@ -509,12 +502,8 @@ public class TransactionRepo {
             """);
             
             List<Object> params = new ArrayList<>();
-            params.add(endDate);
             params.add(startDate);
-            for(int i = 0; i < 3; i++) {
-                params.add(startDate);
-                params.add(endDate);
-            } // for
+            params.add(endDate);
             params.add(userId);
 
             if(accountId != null) {
@@ -536,12 +525,7 @@ public class TransactionRepo {
 
                 try(ResultSet rs = stmt.executeQuery()) {
                     if(rs.next()) {
-                        response = new BurnRateResponse(
-                            rs.getBigDecimal("total_spent"), 
-                            rs.getBigDecimal("average_daily_burn"),
-                            rs.getBigDecimal("average_weekly_burn"),
-                            rs.getBigDecimal("average_monthly_burn"),
-                            rs.getInt("days_until_deplete"));
+                        return rs.getBigDecimal("total_spent");
                     } // while
                     
                 } // try
@@ -550,7 +534,7 @@ public class TransactionRepo {
                 throw new RuntimeException("Error getting burn rate", e);
             } // try-catch
 
-            return response;
+            return BigDecimal.ZERO;
         } // burnRate
 
 } // TransactionRepo

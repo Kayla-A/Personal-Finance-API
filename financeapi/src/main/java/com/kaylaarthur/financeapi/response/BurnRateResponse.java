@@ -14,7 +14,7 @@ public class BurnRateResponse {
         this.totalSpent = totalSpent;
         this.averageDailyBurn = averageDailyBurn;
         this.averageWeeklyBurn = averageWeeklyBurn;
-        this.averageMonthlyBurn = averageMonthlyBurn;
+        this.averageMonthlyBurn = averageMonthlyBurn;        
         this.daysUntilFundsDeplete = daysUntilFundsDeplete;
     } // BurnRateResponse
 
@@ -26,6 +26,8 @@ public class BurnRateResponse {
 
     public BigDecimal getAverageMonthlyBurn() { return averageMonthlyBurn; } // getAverageMonthlyBurn
 
+    // based on daily burn rate
+    // -1 means days until depletion cannot be calculated
     public int getDaysUntilFundsDeplete() {  return daysUntilFundsDeplete; } // getDaysUntilFundsDeplete
 
 } // BurnRateResponse
