@@ -104,13 +104,13 @@ public class AnalyticsService {
         if(accountId != null) {
             // check account belongs to user 
             accountRepo.findByUserIdAndAccountId(userId, accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account for transaction not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
         } // if
 
         if(categoryId != null) {
             // check category belongs to user
             categoryRepo.findByCategoryIdAndUserId(categoryId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Category for transaction not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
         } // if
         
         // check valid date range 
@@ -125,6 +125,7 @@ public class AnalyticsService {
             startDate, 
             endDate
         );
+        System.out.println("TOTAL SPENT__________________" + totalSpent);
 
         BigDecimal balance = accountRepo.getTotalAccountBalance(userId, accountId);
         

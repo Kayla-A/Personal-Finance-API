@@ -333,4 +333,78 @@ public class AnalyticsIntegrationTest {
             .andExpect(jsonPath("$[0].period").value("MONTHLY"));
     } // shouldGetBudgetOverruns
 
+    @Test
+    void shouldGetBurnRate() throws Exception {
+        long accountId = makeAccount("Checking", "CHECKINGS", 1000);
+        long categoryId = makeCategory("Food");
+
+        makeTransaction(
+            categoryId,
+            accountId,
+            100,
+            LocalDate.of(2025, 1, 1),
+            "EXPENSE"
+        );
+
+        makeTransaction(
+            categoryId,
+            accountId,
+            200,
+            LocalDate.of(2025, 1, 31),
+            "EXPENSE"
+        );
+
+        mockMvc.perform(get("/analytics/burn-rate")
+                .header("Authorization", token)
+                .param("startDate", "2025-01-01")
+                .param("endDate", "2025-01-31"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalSpent").value(300.00))
+            .andExpect(jsonPath("$.averageDailyBurn").value(10.00))
+            .andExpect(jsonPath("$.averageWeeklyBurn").value(70.00))
+            .andExpect(jsonPath("$.averageMonthlyBurn").value(300.00))
+            .andExpect(jsonPath("$.daysUntilFundsDeplete").value(70));
+    } // shouldGetBurnRate
+
+    @Test
+    void shouldGetBurnRateForSpecificAccount() throws Exception {
+        long account1 = makeAccount("Checking", "CHECKINGS", 1000);
+        long account2 = makeAccount("Savings", "SAVINGS", 1000);
+
+        long categoryId = makeCategory("Food");
+
+        makeTransaction(categoryId, account1, 100, LocalDate.of(2025, 1, 2), "EXPENSE");
+        makeTransaction(categoryId, account2, 500, LocalDate.of(2025, 1, 2), "EXPENSE");
+
+        mockMvc.perform(get("/analytics/burn-rate")
+                .header("Authorization", token)
+                .param("accountId", String.valueOf(account1))
+                .param("startDate", "2025-01-01")
+                .param("endDate", "2025-01-31"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalSpent").value(100.00));
+    } // shouldGetBurnRateForSpecificAccount
+
+    @Test
+    void shouldHandleZeroExpenses() throws Exception {
+        makeAccount("Checking", "CHECKINGS", 1000);
+
+        mockMvc.perform(get("/analytics/burn-rate")
+                .header("Authorization", token)
+                .param("startDate", "2025-01-01")
+                .param("endDate", "2025-01-31"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalSpent").value(0))
+            .andExpect(jsonPath("$.daysUntilFundsDeplete").value(-1));
+    } // shouldHandleZeroExpenses
+
+    @Test
+    void shouldRejectInvalidDateRange() throws Exception {
+        mockMvc.perform(get("/analytics/burn-rate")
+                .header("Authorization", token)
+                .param("startDate", "2025-01-31")
+                .param("endDate", "2025-01-01"))
+            .andExpect(status().isBadRequest());
+    } // shouldRejectInvalidDateRange
+
 } // AnalyticsIntegrationTest

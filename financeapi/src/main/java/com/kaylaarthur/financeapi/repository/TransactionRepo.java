@@ -526,12 +526,12 @@ public class TransactionRepo {
                 try(ResultSet rs = stmt.executeQuery()) {
                     if(rs.next()) {
                         return rs.getBigDecimal("total_spent");
-                    } // while
-                    
+                    } // if
                 } // try
 
             } catch(SQLException e) {
-                throw new RuntimeException("Error getting burn rate", e);
+                e.printStackTrace();
+                throw new RuntimeException("Error getting total spent", e);
             } // try-catch
 
             return BigDecimal.ZERO;
