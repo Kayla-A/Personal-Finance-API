@@ -7,6 +7,7 @@ import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
+import com.kaylaarthur.financeapi.response.SpendingTrendResponse;
 import com.kaylaarthur.financeapi.service.AnalyticsService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
 
@@ -110,8 +111,26 @@ public class AnalyticsController {
             ));
     } // getBurnRate
     
+    @GetMapping("spending-trend")
+    public ResponseEntity<List<SpendingTrendResponse>> getSpendingTrend(
+        @RequestParam YearMonth startDate,
+        @RequestParam YearMonth endDate,
+        @RequestParam(required = false) Long accountId,
+        @RequestParam(required = false) Long categoryId
+    ) {
+        User user = securityUtility.getCurrentUser();
+        return ResponseEntity.status(HttpStatus.OK).body(
+            analyticsService.getSpendingTrend(
+                user.getId(),
+                startDate,
+                endDate,
+                accountId,
+                categoryId
+            )
+        );
+    } // getSpendingTrend
+
     /*
-    public getSpendingTrend() {} // by category
     public getCategoryDistribution() {}
     public getRecurringTransactions() {}
     public getAnomalies() {}

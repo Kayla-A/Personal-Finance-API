@@ -11,14 +11,19 @@ import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
+import com.kaylaarthur.financeapi.response.SpendingTrendResponse;
 
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -125,7 +130,6 @@ public class AnalyticsService {
             startDate, 
             endDate
         );
-        System.out.println("TOTAL SPENT__________________" + totalSpent);
 
         BigDecimal balance = accountRepo.getTotalAccountBalance(userId, accountId);
         
@@ -150,5 +154,69 @@ public class AnalyticsService {
             daysUntilDeplete
         ); 
     } // getBurnRate
+
+    public List<SpendingTrendResponse> getSpendingTrend(
+        long userId,
+        YearMonth startDate,
+        YearMonth endDate,
+        Long accountId,
+        Long categoryId
+    ) {
+        if(startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Invalid date range");
+        } // if
+
+        if(accountId != null) {
+            // check account belongs to user 
+            accountRepo.findByUserIdAndAccountId(userId, accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        } // if
+
+        if(categoryId != null) {
+            // check category belongs to user
+            categoryRepo.findByCategoryIdAndUserId(categoryId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        } // if
+
+        List<SpendingTrendResponse> responses = new ArrayList<>();
+
+        LocalDate cur = startDate.atDay(1);
+        BigDecimal prevTotal = BigDecimal.ZERO;
+
+        while(!(cur.isAfter(endDate.atEndOfMonth()))) {
+            BigDecimal totalSpent = transactionRepo.totalSpent(
+                userId, 
+                accountId, 
+                categoryId, 
+                cur,
+                cur.with(TemporalAdjusters.lastDayOfMonth())
+            );
+
+            BigDecimal changeAmount = prevTotal == BigDecimal.ZERO 
+                ?  BigDecimal.ZERO
+                : totalSpent.subtract(prevTotal);
+
+            double percentChange = 0;
+            if(prevTotal.compareTo(BigDecimal.ZERO) > 0) {
+                percentChange = changeAmount
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(prevTotal, 2, RoundingMode.HALF_UP)
+                    .doubleValue();
+                    
+            }
+            responses.add(new SpendingTrendResponse(
+                YearMonth.from(cur),
+                totalSpent,
+                changeAmount,
+                percentChange
+            ));
+            
+            prevTotal = totalSpent;
+
+            cur = cur.plusMonths(1); 
+        } // while
+
+        return responses;
+    } // getSpendingTrend
     
 } // AnalyticsService

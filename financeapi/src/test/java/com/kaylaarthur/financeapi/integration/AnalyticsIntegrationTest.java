@@ -407,4 +407,89 @@ public class AnalyticsIntegrationTest {
             .andExpect(status().isBadRequest());
     } // shouldRejectInvalidDateRange
 
+    @Test
+    void shouldGetSpendingTrend() throws Exception {
+        long accountId = makeAccount("Checking", "CHECKINGS", 1000);
+        long categoryId = makeCategory("Food");
+
+        // January: $100
+        makeTransaction(
+            categoryId,
+            accountId,
+            100,
+            LocalDate.of(2025, 1, 10),
+            "EXPENSE"
+        );
+
+        // February: $150
+        makeTransaction(
+            categoryId,
+            accountId,
+            150,
+            LocalDate.of(2025, 2, 10),
+            "EXPENSE"
+        );
+
+        // March: $300
+        makeTransaction(
+            categoryId,
+            accountId,
+            300,
+            LocalDate.of(2025, 3, 10),
+            "EXPENSE"
+        );
+
+        mockMvc.perform(get("/analytics/spending-trend")
+                .header("Authorization", token)
+                .param("startDate", "2025-01")
+                .param("endDate", "2025-03"))
+            .andExpect(status().isOk())
+
+            // January
+            .andExpect(jsonPath("$[0].totalSpent").value(100.00))
+            .andExpect(jsonPath("$[0].changeAmount").value(0.00))
+            .andExpect(jsonPath("$[0].percentChange").value(0.0))
+
+            // February
+            .andExpect(jsonPath("$[1].totalSpent").value(150.00))
+            .andExpect(jsonPath("$[1].changeAmount").value(50.00))
+            .andExpect(jsonPath("$[1].percentChange").value(50.0))
+
+            // March
+            .andExpect(jsonPath("$[2].totalSpent").value(300.00))
+            .andExpect(jsonPath("$[2].changeAmount").value(150.00))
+            .andExpect(jsonPath("$[2].percentChange").value(100.0));
+    } // shouldGetSpendingTrend
+
+    @Test
+    void shouldFilterSpendingTrendByAccount() throws Exception {
+        long account1 = makeAccount("Checking", "CHECKINGS", 1000);
+        long account2 = makeAccount("Savings", "SAVINGS", 1000);
+
+        long categoryId = makeCategory("Food");
+
+        makeTransaction(categoryId, account1, 100,
+            LocalDate.of(2025, 1, 10), "EXPENSE");
+
+        makeTransaction(categoryId, account2, 500,
+            LocalDate.of(2025, 1, 15), "EXPENSE");
+
+        mockMvc.perform(get("/analytics/spending-trend")
+                .header("Authorization", token)
+                .param("accountId", String.valueOf(account1))
+                .param("startDate", "2025-01")
+                .param("endDate", "2025-01"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].totalSpent").value(100.00));
+    } // shouldFilterSpendingTrendByAccount
+
+    @Test
+    void shouldRejectInvalidDateRangeForSpendingTrend() throws Exception {
+        mockMvc.perform(get("/analytics/spending-trend")
+                .header("Authorization", token)
+                .param("startDate", "2025-03")
+                .param("endDate", "2025-01"))
+            .andExpect(status().isBadRequest());
+    } // shouldRejectInvalidDateRangeForSpendingTrend
+
 } // AnalyticsIntegrationTest
