@@ -11,6 +11,7 @@ import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
+import com.kaylaarthur.financeapi.response.RecurringTransactionResponse;
 import com.kaylaarthur.financeapi.response.SpendingTrendResponse;
 
 import org.springframework.stereotype.Service;
@@ -218,5 +219,25 @@ public class AnalyticsService {
 
         return responses;
     } // getSpendingTrend
+
+    public RecurringTransactionResponse getRecurringTransactions(
+        long userId,
+        Long accountId,
+        LocalDate startDate,
+        LocalDate endDate
+    ) {
+        if(startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Invalid date range");
+        } // if
+
+        if(accountId != null) {
+            // check account belongs to user 
+            accountRepo.findByUserIdAndAccountId(userId, accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        } // if
+
+        
+        return null;
+    } // getRecurringTransactions
     
 } // AnalyticsService

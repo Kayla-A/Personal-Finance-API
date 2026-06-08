@@ -7,6 +7,7 @@ import com.kaylaarthur.financeapi.response.BudgetUsageResponse;
 import com.kaylaarthur.financeapi.response.BurnRateResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
+import com.kaylaarthur.financeapi.response.RecurringTransactionResponse;
 import com.kaylaarthur.financeapi.response.SpendingTrendResponse;
 import com.kaylaarthur.financeapi.service.AnalyticsService;
 import com.kaylaarthur.financeapi.utility.SecurityUtility;
@@ -130,16 +131,38 @@ public class AnalyticsController {
         );
     } // getSpendingTrend
 
+    
+    @GetMapping("recurring-transaction")
+    public ResponseEntity<RecurringTransactionResponse> getRecurringTransactions(
+        @RequestParam(required = false) Long accountId,
+        @RequestParam(required = false) LocalDate startDate,
+        @RequestParam(required = false) LocalDate endDate
+    ) {
+        User user = securityUtility.getCurrentUser();
+        return ResponseEntity.status(HttpStatus.OK).body(
+            analyticsService.getRecurringTransactions(
+                user.getId(),
+                accountId,
+                startDate,
+                endDate
+            )
+        );
+    } // getRecurringTransactions
+
+/* 
+    public getSavingRate() {
+
+    } // getSavingRate
+
+    public getIncomeVsExpense() {
+
+    } // getIncomeVsExpense
+*/
     /*
-    public getCategoryDistribution() {}
-    public getRecurringTransactions() {}
     public getAnomalies() {}
     public getForcasted() {} // category
-    public getSavingRate() {}
-    public getTopCategories() {} // add a limit
     public getAverageSpending() {} // by interval
     public getTotalSpending() {} // date range
-    public getIncomeVsExpense() {} // date range
     */
 
 } // ComputationController
