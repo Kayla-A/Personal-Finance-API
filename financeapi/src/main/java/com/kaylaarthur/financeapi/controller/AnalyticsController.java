@@ -133,7 +133,7 @@ public class AnalyticsController {
 
     
     @GetMapping("recurring-transaction")
-    public ResponseEntity<RecurringTransactionResponse> getRecurringTransactions(
+    public ResponseEntity<List<RecurringTransactionResponse>> getRecurringTransactions(
         @RequestParam(required = false) Long accountId,
         @RequestParam(required = false) LocalDate startDate,
         @RequestParam(required = false) LocalDate endDate

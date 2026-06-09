@@ -1,7 +1,9 @@
 package com.kaylaarthur.financeapi.service;
 
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
+import com.kaylaarthur.financeapi.enums.TransactionType;
 import com.kaylaarthur.financeapi.model.Budget;
+import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.repository.AccountRepo;
 import com.kaylaarthur.financeapi.repository.BudgetRepo;
 import com.kaylaarthur.financeapi.repository.CategoryRepo;
@@ -26,6 +28,8 @@ import java.time.temporal.TemporalAdjusters;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AnalyticsService {
@@ -220,7 +224,7 @@ public class AnalyticsService {
         return responses;
     } // getSpendingTrend
 
-    public RecurringTransactionResponse getRecurringTransactions(
+    public List<RecurringTransactionResponse> getRecurringTransactions(
         long userId,
         Long accountId,
         LocalDate startDate,
@@ -236,8 +240,62 @@ public class AnalyticsService {
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
         } // if
 
+        List<Transaction> transactions = transactionRepo.findAllTransactions(
+            userId, 
+            accountId, 
+            null, 
+            TransactionType.valueOf("EXPESNE"), 
+            startDate, 
+            endDate
+        );
+
+        // <category_id, Transactions>
+        Map<Long, List<Transaction>> transMap =
+            transactions.stream()
+                .collect(Collectors.groupingBy(Transaction::getCategoryId));
         
-        return null;
+        List<RecurringTransactionResponse> responses = new ArrayList<>();
+
+        for(Map.Entry<Long, List<Transaction>> entry : transMap.entrySet()) {
+            List<Transaction> transList = entry.getValue();
+            
+            if(transList.size() >= 4) {
+                BigDecimal avgAmount = BigDecimal.ZERO;
+                BigDecimal amntVariation = BigDecimal.ZERO;
+                long avgInterval = 0;
+
+                for(int i = 0; i < transList.size(); i++) {
+                    avgAmount.add(transList.get(i).getAmount());
+                    avgInterval += i == 0 
+                        ? 0
+                        : ChronoUnit.DAYS.between(transList.get(i).getDate(), transList.get(i - 1).getDate());
+                } // for
+                
+                avgAmount = avgAmount.divide(BigDecimal.valueOf(transList.size()));
+                amntVariation = avgAmount.multiply(BigDecimal.valueOf(0.20));
+                avgInterval = avgInterval / (transList.size() - 1);
+
+                for(Transaction t : transList) {
+                    if(t.getAmount().compareTo(avgAmount.subtract(amntVariation)) >= 0 &&
+                        t.getAmount().compareTo(avgAmount.add(amntVariation)) <= 0) {
+                            // if(days >= avgInterval && days <= avgInterval + 3) {
+                               // measure amount variation ----
+
+                                responses.add(new RecurringTransactionResponse(
+                                    categoryRepo.findByCategoryIdAndUserId(t.getCategoryId(), userId)
+                                        .toString(), 
+                                    t.getAmount(),
+                                    null, 
+                                    t.getDate().plusDays(avgInterval))
+                                );
+                            // } // if
+                    } // if
+                } // for
+
+            } // if
+        } // for
+        
+        return responses;
     } // getRecurringTransactions
     
 } // AnalyticsService

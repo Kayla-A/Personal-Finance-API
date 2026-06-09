@@ -4,7 +4,6 @@ import com.kaylaarthur.financeapi.model.Transaction;
 import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
 import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
 import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
-import com.kaylaarthur.financeapi.response.RecurringTransactionResponse;
 import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
@@ -21,9 +20,10 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 
-import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 
 import javax.sql.DataSource;
 
@@ -134,7 +134,14 @@ public class TransactionRepo {
         return Optional.empty();
     } // findByUserIdAndTransactionId
 
-    public List<Transaction> findAllTransactions(long userId, Long accountId, Long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
+    public List<Transaction> findAllTransactions(
+        long userId, 
+        Long accountId, 
+        Long categoryId, 
+        TransactionType type, 
+        LocalDate startDate, 
+        LocalDate endDate
+    ) {
         StringBuilder sql = new StringBuilder("""
                 SELECT * 
                 FROM Transactions t
@@ -536,81 +543,5 @@ public class TransactionRepo {
 
             return BigDecimal.ZERO;
         } // burnRate
-
-        public List<RecurringTransactionResponse> ruecurringTransactions(
-            long userId,
-            Long accountId,
-            LocalDate startDate,
-            LocalDate endDate
-        ) {
-            List<RecurringTransactionResponse> responses = new ArrayList<>();
-            List<Object> params = new ArrayList<>();
-
-            StringBuilder sql = new StringBuilder("""
-                SELECT c.category_name as category_name,
-                    avg(t.amount) as average_amount,
-                    count(t.transaction_id) as occurance,
-                    as frequency,
-                    as next_expected_date
-                FROM Transactions t
-                JOIN Accounts a
-                ON t.account_id = a.account_id
-                JOIN Categories c
-                ON t.category_id = c.category_id
-                WHERE a.user_id = ?
-            """);
-
-            if(accountId != null) {
-                sql.append(" AND t.account_id = ?");
-                params.add(accountId);
-            } // if
-
-            if(startDate != null) {
-                sql.append(" AND t.date >= ?");
-                params.add(startDate);
-            } // if
-
-            if(endDate != null) {
-                sql.append(" AND t.date <= ?");
-                params.add(endDate);
-            } // if
-
-            sql.append("""
-                GROUP BY t.category_id
-                HAVING 
-                    AND count(t.category_id) >= 4
-                    AND 
-                    AND t.amount <= (20 * avg(t.amount)) / 100 
-                ORDER BY avg(t.amount) desc
-             """);
-
-            try(Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-                
-                stmt.setObject(1, userId);
-
-                for(int i = 0; i < params.size(); i++) {
-                    stmt.setObject(i + 2, params.get(i));
-                } // for
-
-                try(ResultSet rs = stmt.executeQuery()) {
-                    while(rs.next()) {
-                        responses.add(new RecurringTransactionResponse(
-                            rs.getString("category_name"),
-                            rs.getBigDecimal("average_amount"),
-                            rs.getInt("occurance"),
-                            rs.getString("frequency"),
-                            rs.getDate("next_expected_date").toLocalDate()
-                        ));
-                    } // if
-                } // try
-
-            } catch(SQLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Error getting recurring transactions", e);
-            } // try-catch
-
-            return responses;
-        } // ruecurringTransactions
 
 } // TransactionRepo
