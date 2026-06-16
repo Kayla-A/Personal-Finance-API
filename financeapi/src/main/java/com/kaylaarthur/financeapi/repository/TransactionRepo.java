@@ -1,18 +1,29 @@
 package com.kaylaarthur.financeapi.repository;
 
 import com.kaylaarthur.financeapi.model.Transaction;
+import com.kaylaarthur.financeapi.response.BudgetOverrunResponse;
+import com.kaylaarthur.financeapi.response.CategorySpendingResponse;
+import com.kaylaarthur.financeapi.response.MonthlySummaryResponse;
+import com.kaylaarthur.financeapi.enums.BudgetInterval;
 import com.kaylaarthur.financeapi.enums.TransactionType;
 
+import java.math.BigDecimal;
+
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 import java.time.LocalDate;
-import java.sql.Date;
-import java.util.Optional;
+import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 
 import javax.sql.DataSource;
 
@@ -123,7 +134,14 @@ public class TransactionRepo {
         return Optional.empty();
     } // findByUserIdAndTransactionId
 
-    public List<Transaction> findAllTransactions(long userId, Long accountId, Long categoryId, TransactionType type, LocalDate startDate, LocalDate endDate) {
+    public List<Transaction> findAllTransactions(
+        long userId, 
+        Long accountId, 
+        Long categoryId, 
+        TransactionType type, 
+        LocalDate startDate, 
+        LocalDate endDate
+    ) {
         StringBuilder sql = new StringBuilder("""
                 SELECT * 
                 FROM Transactions t
@@ -208,8 +226,6 @@ public class TransactionRepo {
     } // findTransactionsByUserId
 
 
-
-
     private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
         return new Transaction(
                         rs.getLong("transaction_id"),
@@ -222,4 +238,310 @@ public class TransactionRepo {
                     );
     } // mapRowToTransaction
     
+
+    public BigDecimal sumExpensesByCategoryAndPeriod(long userId, long categoryId, BudgetInterval period) {
+        String sql = """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transactions t
+            JOIN Accounts a
+            ON t.account_id = a.account_id
+            WHERE a.user_id = ?
+                AND t.category_id = ?
+                AND t.transaction_type = 'EXPENSE'
+        """;
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setLong(1, userId);
+            stmt.setLong(2, categoryId);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) { 
+                    BigDecimal result = rs.getBigDecimal(1); 
+                    return result != null ? result : BigDecimal.ZERO;
+                }
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error calculating spending by category and period", e);
+        } // try
+
+        return BigDecimal.ZERO;
+    } // sumExpensesByCategoryAndPeriod
+
+    public List<MonthlySummaryResponse> monthlySummary(long userId, YearMonth startDate, YearMonth endDate) {
+        String sql = """
+            SELECT 
+                YEAR(t.date) as trans_year,
+                MONTH(t.date) as trans_month,
+                sum(
+                    CASE
+                        WHEN t.transaction_type = 'EXPENSE'
+                        THEN t.amount
+                        ELSE 0
+                    END
+                ) as total_expense,
+                sum(
+                    CASE
+                        WHEN t.transaction_type = 'INCOME'
+                        THEN t.amount
+                        ELSE 0
+                    END
+                ) as total_income,
+                (
+                    SELECT c.category_name
+                    FROM Transactions t2
+                    JOIN Categories c
+                        ON t2.category_id = c.category_id
+                    JOIN Accounts a2
+                        ON t2.account_id = a2.account_id
+                    WHERE a2.user_id = a.user_id
+                        AND YEAR(t2.date) = YEAR(t.date)
+                        AND MONTH(t2.date) = MONTH(t.date)
+                    GROUP BY c.category_id, c.category_name
+                    ORDER BY count(*) desc LIMIT 1
+                ) as most_frequent_category
+            From Transactions t
+            JOIN Accounts a
+                ON a.account_id = t.account_id
+            WHERE a.user_id = ?
+                AND t.date >= ?
+                AND t.date <= ?
+            GROUP BY YEAR(t.date), MONTH(t.date)
+            ORDER BY  YEAR(t.date), MONTH(t.date) desc
+        """;
+        List<MonthlySummaryResponse> summary = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setDate(2, Date.valueOf(startDate.atDay(1)));
+            stmt.setDate(3, Date.valueOf(endDate.atEndOfMonth()));
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    summary.add(new MonthlySummaryResponse(
+                        rs.getInt("trans_year"), 
+                        rs.getInt("trans_month"),
+                        rs.getBigDecimal("total_expense"),
+                        rs.getBigDecimal("total_income"),
+                        rs.getString("most_frequent_category")));
+                } // if
+                
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error getting monthly summary", e);
+        } // try-catch
+
+        return summary;
+    } // monthlySummary
+
+    public List<CategorySpendingResponse> spendingByCategory(
+        long userId, 
+        LocalDate startDate, 
+        LocalDate endDate,
+        Long accountId,
+        BigDecimal minAmount
+    ) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                c.category_name as category_name,
+                SUM(t.amount) as total_spent,
+                ROUND(
+                    SUM(t.amount) / 
+                    (   
+                        SELECT SUM(t.amount) 
+                        FROM Transactions t, Categories c 
+                        WHERE c.user_id = ? 
+        """);
+        
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if(accountId != null) {
+            sql.append(" AND t.account_id = ?");
+            params.add(accountId);
+        } // if
+
+        if(minAmount != null) {
+            sql.append(" AND t.amount >= ?");
+            params.add(minAmount);
+        } // if
+
+        sql.append("""
+                            AND c.category_id = t.category_id
+                            AND t.date BETWEEN ? AND ?
+                            AND t.transaction_type = 'EXPENSE'
+                    ) * 100, 2) as percent_of_spendings,
+                ROUND(SUM(t.amount)/COUNT(t.transaction_id), 2) as average_trans_size
+            FROM Transactions t
+            JOIN Categories c
+            ON t.category_id = c.category_id
+            WHERE c.user_id = ?
+                AND t.date BETWEEN ? AND ? 
+                AND t.transaction_type = 'EXPENSE' 
+        """);
+        
+        params.add(startDate);
+        params.add(endDate);
+        params.add(userId);
+        params.add(startDate);
+        params.add(endDate);
+
+        if(accountId != null) {
+            sql.append(" AND t.account_id = ?");
+            params.add(accountId);
+        } // if
+
+        if(minAmount != null) {
+            sql.append(" AND t.amount >= ?");
+            params.add(minAmount);
+        } // if
+
+        sql.append("""
+             GROUP BY c.category_name
+            ORDER BY total_spent
+        """);
+
+        List<CategorySpendingResponse> responses = new ArrayList<>();
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            
+            for(int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            } // for
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    responses.add(new CategorySpendingResponse(
+                        rs.getString("category_name"), 
+                        rs.getBigDecimal("total_spent"),
+                        rs.getDouble("percent_of_spendings"),
+                        rs.getBigDecimal("average_trans_size")));
+                } // while
+                
+            } // try
+
+        } catch(SQLException e) {
+            throw new RuntimeException("Error getting spending by category", e);
+        } // try-catch
+
+        return responses;
+    } // spendingByCategory
+
+    public List<BudgetOverrunResponse> budgetOverrun(long userId) {
+        List<BudgetOverrunResponse> responses = new ArrayList<>();
+
+        String sql = """
+            SELECT 
+                c.category_name as category_name,
+                b.budget_limit as budget_limit,
+                sum(t.amount) as actual_spent,
+                b.period as period
+            FROM Transactions t
+            JOIN Categories c
+            ON t.category_id = c.category_id
+            JOIN Budgets b
+            ON c.category_id = b.category_id
+            WHERE c.user_id = ?
+                AND b.user_id = ?
+                AND t.date <= ?
+                AND t.transaction_type = 'EXPENSE'
+                AND t.date >= CASE  
+                    WHEN b.period = 'MONTHLY' THEN ?
+                    WHEN b.period = 'YEARLY' THEN ?
+                END
+            GROUP BY b.budget_id, c.category_name, b.budget_limit, b.period
+            HAVING sum(t.amount) > b.budget_limit
+            ORDER BY actual_spent desc
+        """;
+
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, userId);
+            stmt.setLong(2, userId);
+            stmt.setDate(3, Date.valueOf(LocalDate.now()));
+            stmt.setDate(4, Date.valueOf(LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())));
+            stmt.setDate(5, Date.valueOf(LocalDate.now().with(TemporalAdjusters.firstDayOfYear())));
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    responses.add(new BudgetOverrunResponse(
+                        rs.getString("category_name"), 
+                        rs.getBigDecimal("budget_limit"),
+                        rs.getBigDecimal("actual_spent"),
+                        BudgetInterval.valueOf(rs.getString("period"))
+                    ));
+                } // while
+                
+            } // try
+
+        } catch(SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error getting budget overrun by category", e);
+        } // try-catch
+
+        return responses;
+    } // budgetOverrun
+
+    public BigDecimal totalSpent(
+            long userId, 
+            Long accountId, 
+            Long categoryId, 
+            LocalDate startDate, 
+            LocalDate endDate
+        ) {
+            StringBuilder sql = new StringBuilder("""
+                SELECT 
+                    COALESCE(sum(t.amount), 0) as total_spent
+                FROM Transactions t
+                JOIN Accounts a
+                    ON t.account_id = a.account_id
+                JOIN Categories c
+                    ON t.category_id = c.category_id
+                WHERE t.date BETWEEN ? AND ?
+                    AND a.user_id = ?
+                    AND t.transaction_type = 'EXPENSE'
+            """);
+            
+            List<Object> params = new ArrayList<>();
+            params.add(startDate);
+            params.add(endDate);
+            params.add(userId);
+
+            if(accountId != null) {
+                sql.append(" AND t.account_id = ?");
+                params.add(accountId);
+            } // if
+
+            if(categoryId != null) {
+                sql.append(" AND t.category_id = ?");
+                params.add(categoryId);
+            } // if
+
+            try(Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+                
+                for(int i = 0; i < params.size(); i++) {
+                    stmt.setObject(i + 1, params.get(i));
+                } // for
+
+                try(ResultSet rs = stmt.executeQuery()) {
+                    if(rs.next()) {
+                        return rs.getBigDecimal("total_spent");
+                    } // if
+                } // try
+
+            } catch(SQLException e) {
+                throw new RuntimeException("Error getting total spent", e);
+            } // try-catch
+
+            return BigDecimal.ZERO;
+        } // burnRate
+
 } // TransactionRepo
