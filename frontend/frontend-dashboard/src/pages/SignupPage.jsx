@@ -1,6 +1,23 @@
+import { useState } from "react"
 import "../styles/SignupPage.css"
 
 function SignupPage() {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+
+    function handleEmail(input) {
+        setEmail(input.target.value)
+    } // handleEmail
+
+    function handlePassword(input) {
+        setPassword(input.target.value)
+    } // handlePassword
+
+    function handleClick() {
+        // send email and password to create user endpoint
+        
+    } // handleClick
+
     return (
         <>
             <title>Signup</title>
@@ -9,12 +26,12 @@ function SignupPage() {
                     <h1>Sign up</h1>
 
                     <label>Enter email</label>
-                    <input type="text" name="email" />
+                    <input onChange={handleEmail} type="text" name="email" />
 
                     <label>Enter password</label>
-                    <input type="text" name="password" />
+                    <input onChange={handlePassword} type="text" name="password" />
 
-                    <button>Sign up</button>
+                    <button onClick={handleClick}>Sign up</button>
 
                     <hr />
 
